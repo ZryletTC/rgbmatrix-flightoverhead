@@ -3,7 +3,10 @@ Description=Flights Overhead Display on RGB Matrix
 Wants=dump1090-fa.service
 
 [Service]
+ExecStartPre=/usr/bin/test -e /run/dump1090-fa/aircraft.json
 ExecStart=/home/pi/rgbmatrix-flightoverhead/pyrgbmatrix/bin/python /home/pi/rgbmatrix-flightoverhead/show_flights.py
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target

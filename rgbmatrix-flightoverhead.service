@@ -1,0 +1,9 @@
+[Unit]
+Description=Flights Overhead Display on RGB Matrix
+Wants=dump1090-fa.service
+
+[Service]
+ExecStart=/home/pi/rgbmatrix-flightoverhead/pyrgbmatrix/bin/python /home/pi/rgbmatrix-flightoverhead/show_flights.py
+
+[Install]
+WantedBy=multi-user.target

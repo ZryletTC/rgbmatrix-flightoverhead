@@ -1,9 +1,12 @@
-TEST=False
-
+import sys
 import time
 import json
+from pathlib import Path
 from PIL import BdfFontFile, Image, ImageDraw
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
+
+TEST=False
+HERE_DIR = Path(__file__).resolve().parent
 
 
 options = RGBMatrixOptions()
@@ -20,7 +23,12 @@ with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
 
 
 def get_flights():
-    with open("/run/dump1090-fa/aircraft.json", "r") as f:
+    if TEST:
+        json_path = HERE_DIR/"test.json"
+    else:
+        json_path = "/run/dump1090-fa/aircraft.json"
+
+    with open(json_path, "r") as f:
         data = json.load(f)
 
     lines = []
@@ -45,10 +53,7 @@ def display_text(text_array=[]):
 
 def watch_flights():
     while True:
-        if TEST:
-            lines = ["testing...", "1", "2", "3"]
-        else:
-            lines = get_flights()
+        lines = get_flights()
         display_text(text_array=lines)
         time.sleep(2)
 

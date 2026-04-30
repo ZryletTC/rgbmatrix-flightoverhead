@@ -62,15 +62,18 @@ def get_flights():
 
 
 def display_text(text_array=[]):
-    img = Image.new('RGB', (64, 32))
-    draw = ImageDraw.Draw(img)
-    ypos = 0
+    if text_array:
+        img = Image.new('RGB', (64, 32), settings['bg_color'])
+        draw = ImageDraw.Draw(img)
+        ypos = 0
 
-    for line in text_array:
-        draw.text((0,ypos), line, fill=(255,255,255), font=font)
-        ypos += 9
+        for line in text_array:
+            draw.text((0,ypos), line, fill=(255,255,255), font=font)
+            ypos += 9
 
-    matrix.SetImage(img)
+        matrix.SetImage(img)
+    else:
+        matrix.Clear()
 
 
 def watch_flights():

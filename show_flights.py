@@ -17,9 +17,32 @@ options.cols = 64
 matrix = RGBMatrix(options=options)
 
 
+with open(HERE_DIR/"settings.json", "r") as f:
+    settings = json.load(f)
+
+
 with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
     fontfile = BdfFontFile.BdfFontFile(ff)
     font = fontfile.to_imagefont()
+
+
+def is_overhead(aircraft):
+    keys = aircraft.keys()
+
+    if 'flight' not in keys:
+        return False
+
+    try:
+        alt = aircraft['alt_baro']
+        lat = aircraft['lat']
+        lon = aircraft['lon']
+    except KeyError as e:
+        print(f"Key not found in json. {e}", file=sys.stderr)
+        return False
+
+    return (alt < 5000 and
+            lat > settings['lat_min'] and lat < settings['lat_max'] and
+            lon > settings['lon_min'] and lon < settings['lon_max'])
 
 
 def get_flights():
@@ -33,9 +56,8 @@ def get_flights():
 
     lines = []
     for aircraft in data['aircraft']:
-        if 'flight' in aircraft.keys():
+        if is_overhead(aircraft):
             lines.append(aircraft['flight'])
-
     return lines
 
 

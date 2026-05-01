@@ -1,0 +1,11 @@
+{
+    "selection_method": "radius",
+    "lat_min": 00.000000,
+    "lat_max": 00.000000,
+    "lon_min": -000.000000,
+    "lon_ma0": -000.000000,
+    "bg_color": "#000",
+    "lat": 00.000000,
+    "lon": -000.000000,
+    "radius": 4.25
+}

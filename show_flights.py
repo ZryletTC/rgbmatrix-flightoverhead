@@ -1,6 +1,7 @@
 import sys
 import time
 import json
+import numpy as np
 from pathlib import Path
 from PIL import BdfFontFile, Image, ImageDraw
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
@@ -26,6 +27,33 @@ with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
     font = fontfile.to_imagefont()
 
 
+def get_distance(lat2, lon2):
+    R = 6373  # Earth radius in km
+    lat1 = settings['lat']  # Receiver latitude
+    lon1 = settings['lon']  # Receiver latitude
+
+    d_lat = np.deg2rad(lat2 - lat1)
+    d_lon = np.deg2rad(lon2 - lon1)
+    lat1_rads = np.deg2rad(lat1)
+    lat2_rads = np.deg2rad(lat2)
+
+    a = np.sin(d_lat/2)**2 + np.cos(lat1)*np.cos(lat2) * np.sin(d_lon/2)**2
+
+    return 2 * R * np.arcsin(np.sqrt(a))
+
+
+def in_area(lat, lon):
+    if settings['selection_method'] == 'rect':
+        return (lat > settings['lat_min'] and
+                lat < settings['lat_max'] and
+                lon > settings['lon_min'] and
+                lon < settings['lon_max'])
+    elif settings['selection_method'] == 'radius':
+        dist = get_distance(lat, lon)
+        print(f"Distance: {dist}km")
+        return get_distance(lat, lon) < settings['radius']
+
+
 def is_overhead(aircraft):
     keys = aircraft.keys()
 
@@ -38,11 +66,10 @@ def is_overhead(aircraft):
         lon = aircraft['lon']
     except KeyError as e:
         print(f"Key not found in json. {e}", file=sys.stderr)
+        print(f"JSON Data: {aircraft}")
         return False
 
-    return (alt < 5000 and
-            lat > settings['lat_min'] and lat < settings['lat_max'] and
-            lon > settings['lon_min'] and lon < settings['lon_max'])
+    return (alt < 5000 and in_area(lat, lon))
 
 
 def get_flights():

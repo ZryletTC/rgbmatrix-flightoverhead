@@ -30,7 +30,7 @@ with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
 def get_distance(lat2, lon2):
     R = 6373  # Earth radius in km
     lat1 = settings['lat']  # Receiver latitude
-    lon1 = settings['lon']  # Receiver latitude
+    lon1 = settings['lon']  # Receiver longitude
 
     d_lat = np.deg2rad(lat2 - lat1)
     d_lon = np.deg2rad(lon2 - lon1)
@@ -41,6 +41,13 @@ def get_distance(lat2, lon2):
          + np.cos(lat1_rads)*np.cos(lat2_rads) * np.sin(d_lon/2)**2)
 
     return 2 * R * np.arcsin(np.sqrt(a))
+
+
+def get_aircraft_distance(aircraft):
+    lat2 = aircraft['lat']  # Aircraft latitude
+    lon2 = aircraft['lon']  # Aircraft longitude
+
+    return get_distance(lat2, lon2)
 
 
 def in_area(lat, lon):
@@ -73,7 +80,7 @@ def is_overhead(aircraft):
     return (alt < 5000 and in_area(lat, lon))
 
 
-def get_flights():
+def get_overhead_aircraft():
     if TEST:
         json_path = HERE_DIR/"test.json"
     else:
@@ -82,11 +89,23 @@ def get_flights():
     with open(json_path, "r") as f:
         data = json.load(f)
 
-    lines = []
+    flights = []
     for aircraft in data['aircraft']:
         if is_overhead(aircraft):
-            lines.append(aircraft['flight'])
-    return lines
+            flights.append(aircraft['flight'])
+
+    # Return only the closest flight
+    if flights:
+        if len(flights) > 1:
+            return min(flights, key=get_distance)
+        else:
+            return flights[0]
+    else:
+        return None
+
+
+def get_aircraft_info(aircraft):
+    return [aircraft['flight']]
 
 
 def display_text(text_array=[]):
@@ -106,7 +125,8 @@ def display_text(text_array=[]):
 
 def watch_flights():
     while True:
-        lines = get_flights()
+        aircraft = get_overhead_aircraft()
+        lines = get_aircraft_info(aircraft)
         display_text(text_array=lines)
         time.sleep(2)
 

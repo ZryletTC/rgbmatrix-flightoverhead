@@ -89,17 +89,17 @@ def get_overhead_aircraft():
     with open(json_path, "r") as f:
         data = json.load(f)
 
-    flights = []
+    aircraft_list = []
     for aircraft in data['aircraft']:
         if is_overhead(aircraft):
-            flights.append(aircraft['flight'])
+            aircraft_list.append(aircraft)
 
-    # Return only the closest flight
-    if flights:
-        if len(flights) > 1:
-            return min(flights, key=get_distance)
+    # Return only the closest aircraft
+    if aircraft_list:
+        if len(aircraft_list) > 1:
+            return min(aircraft_list, key=get_aircraft_distance)
         else:
-            return flights[0]
+            return aircraft_list[0]
     else:
         return None
 

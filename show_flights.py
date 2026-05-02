@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import BdfFontFile, Image, ImageDraw
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
-TEST=False
+TEST = False
 HERE_DIR = Path(__file__).resolve().parent
 
 
@@ -37,7 +37,8 @@ def get_distance(lat2, lon2):
     lat1_rads = np.deg2rad(lat1)
     lat2_rads = np.deg2rad(lat2)
 
-    a = np.sin(d_lat/2)**2 + np.cos(lat1)*np.cos(lat2) * np.sin(d_lon/2)**2
+    a = (np.sin(d_lat/2)**2
+         + np.cos(lat1_rads)*np.cos(lat2_rads) * np.sin(d_lon/2)**2)
 
     return 2 * R * np.arcsin(np.sqrt(a))
 
@@ -95,7 +96,7 @@ def display_text(text_array=[]):
         ypos = 0
 
         for line in text_array:
-            draw.text((0,ypos), line, fill=(255,255,255), font=font)
+            draw.text((0, ypos), line, fill=(255, 255, 255), font=font)
             ypos += 9
 
         matrix.SetImage(img)

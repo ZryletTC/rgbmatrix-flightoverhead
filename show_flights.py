@@ -128,11 +128,14 @@ def display_text(text_array=None):
 
 
 def watch_flights():
-    while True:
-        aircraft = get_overhead_aircraft()
-        lines = get_aircraft_info(aircraft)
-        display_text(text_array=lines)
-        time.sleep(2)
+    try:
+        while True:
+            aircraft = get_overhead_aircraft()
+            lines = get_aircraft_info(aircraft)
+            display_text(text_array=lines)
+            time.sleep(2)
+    except KeyboardInterrupt:
+        print("\nCtrl-C received. Stopping...")
 
 
 if __name__ == "__main__":

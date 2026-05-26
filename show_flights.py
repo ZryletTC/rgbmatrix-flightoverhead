@@ -25,6 +25,7 @@ SETTINGS = {
     "selection_method": "radius",
     "bg_color": "#000",
     "fg_color": "#fff",
+    "fg_color_error": "#f00",
     "lat": 34.427746,
     "lon": -119.840742,
     "radius": 4
@@ -128,16 +129,17 @@ def get_aircraft_info(aircraft):
     return [aircraft['flight']]
 
 
-def display_text(text_array=None):
+def display_text(text_array=None, error=False):
     if text_array is None:
         matrix.Clear()
     else:
+        fg_color = SETTINGS['fg_color'] if not error else SETTINGS['fg_color_error']
         img = Image.new('RGB', (64, 32), SETTINGS['bg_color'])
         draw = ImageDraw.Draw(img)
         ypos = 0
 
         for line in text_array:
-            draw.text((0, ypos), line, fill=SETTINGS['fg_color'], font=font)
+            draw.text((0, ypos), line, fill=fg_color, font=font)
             ypos += 9
 
         matrix.SetImage(img)
@@ -146,10 +148,16 @@ def display_text(text_array=None):
 def watch_flights():
     try:
         while True:
-            aircraft = get_overhead_aircraft()
-            lines = get_aircraft_info(aircraft)
-            display_text(text_array=lines)
-            time.sleep(2)
+            try:
+                aircraft = get_overhead_aircraft()
+                lines = get_aircraft_info(aircraft)
+                display_text(text_array=lines)
+                time.sleep(2)
+            except OSError:
+                print("Data json not found!")
+                lines = ["Data json", "not found"]
+                display_text(text_array=lines, error=True)
+                time.sleep(10)
     except KeyboardInterrupt:
         print("\nCtrl-C received. Stopping...")
 

@@ -20,8 +20,24 @@ options.cols = 64
 matrix = RGBMatrix(options=options)
 
 
-with open(HERE_DIR/"settings.json", "r") as f:
-    settings = json.load(f)
+# Default settings, will be overwritten by values in settings.json
+SETTINGS = {
+    "selection_method": "radius",
+    "bg_color": "#000",
+    "fg_color": "#fff",
+    "lat": 34.427746,
+    "lon": -119.840742,
+    "radius": 4
+}
+
+try:
+    with open(HERE_DIR/"settings.json", "r") as f:
+        json_settings = json.load(f)
+        for key, val in json_settings.items():
+            SETTINGS[key] = val
+except OSError:
+    print("settings.json not found. Using default settings.")
+
 
 
 with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
@@ -31,8 +47,8 @@ with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
 
 def get_distance(lat2, lon2):
     R = 6373  # Earth radius in km
-    lat1 = settings['lat']  # Receiver latitude
-    lon1 = settings['lon']  # Receiver longitude
+    lat1 = SETTINGS['lat']  # Receiver latitude
+    lon1 = SETTINGS['lon']  # Receiver longitude
 
     d_lat = np.deg2rad(lat2 - lat1)
     d_lon = np.deg2rad(lon2 - lon1)
@@ -53,15 +69,15 @@ def get_aircraft_distance(aircraft):
 
 
 def in_area(lat, lon):
-    if settings['selection_method'] == 'rect':
-        return (lat > settings['lat_min'] and
-                lat < settings['lat_max'] and
-                lon > settings['lon_min'] and
-                lon < settings['lon_max'])
-    elif settings['selection_method'] == 'radius':
+    if SETTINGS['selection_method'] == 'rect':
+        return (lat > SETTINGS['lat_min'] and
+                lat < SETTINGS['lat_max'] and
+                lon > SETTINGS['lon_min'] and
+                lon < SETTINGS['lon_max'])
+    elif SETTINGS['selection_method'] == 'radius':
         dist = get_distance(lat, lon)
         print(f"Distance: {dist}km")
-        return get_distance(lat, lon) < settings['radius']
+        return get_distance(lat, lon) < SETTINGS['radius']
 
 
 def is_overhead(aircraft):
@@ -116,12 +132,12 @@ def display_text(text_array=None):
     if text_array is None:
         matrix.Clear()
     else:
-        img = Image.new('RGB', (64, 32), settings['bg_color'])
+        img = Image.new('RGB', (64, 32), SETTINGS['bg_color'])
         draw = ImageDraw.Draw(img)
         ypos = 0
 
         for line in text_array:
-            draw.text((0, ypos), line, fill=(255, 255, 255), font=font)
+            draw.text((0, ypos), line, fill=SETTINGS['fg_color'], font=font)
             ypos += 9
 
         matrix.SetImage(img)

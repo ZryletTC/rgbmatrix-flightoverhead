@@ -105,11 +105,15 @@ def get_overhead_aircraft():
 
 
 def get_aircraft_info(aircraft):
+    if aircraft is None:
+        return None
     return [aircraft['flight']]
 
 
-def display_text(text_array=[]):
-    if text_array:
+def display_text(text_array=None):
+    if text_array is None:
+        matrix.Clear()
+    else:
         img = Image.new('RGB', (64, 32), settings['bg_color'])
         draw = ImageDraw.Draw(img)
         ypos = 0
@@ -119,8 +123,6 @@ def display_text(text_array=[]):
             ypos += 9
 
         matrix.SetImage(img)
-    else:
-        matrix.Clear()
 
 
 def watch_flights():

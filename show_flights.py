@@ -32,8 +32,8 @@ SETTINGS = {
 }
 
 try:
-    with open(HERE_DIR / "settings.json", "r") as f:
-        json_settings = json.load(f)
+    with open(HERE_DIR / "settings.json", "r", encoding="utf-8") as settings_file:
+        json_settings = json.load(settings_file)
         for key, val in json_settings.items():
             SETTINGS[key] = val
 except OSError:
@@ -108,8 +108,8 @@ def get_overhead_aircraft():
     else:
         json_path = "/run/dump1090-fa/aircraft.json"
 
-    with open(json_path, "r") as f:
-        data = json.load(f)
+    with open(json_path, "r", encoding="utf-8") as aircraft_file:
+        data = json.load(aircraft_file)
 
     aircraft_list = []
     for aircraft in data["aircraft"]:

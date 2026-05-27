@@ -46,7 +46,7 @@ with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
 
 
 def get_distance(lat2, lon2):
-    R = 6373  # Earth radius in km
+    earth_radius = 6373  # Earth radius in km
     lat1 = SETTINGS["lat"]  # Receiver latitude
     lon1 = SETTINGS["lon"]  # Receiver longitude
 
@@ -60,7 +60,7 @@ def get_distance(lat2, lon2):
         + np.cos(lat1_rads) * np.cos(lat2_rads) * np.sin(d_lon / 2) ** 2
     )
 
-    return 2 * R * np.arcsin(np.sqrt(a))
+    return 2 * earth_radius * np.arcsin(np.sqrt(a))
 
 
 def get_aircraft_distance(aircraft):
@@ -73,15 +73,19 @@ def get_aircraft_distance(aircraft):
 def in_area(lat, lon):
     if SETTINGS["selection_method"] == "rect":
         return (
-            lat > SETTINGS["lat_min"]
-            and lat < SETTINGS["lat_max"]
-            and lon > SETTINGS["lon_min"]
-            and lon < SETTINGS["lon_max"]
+            SETTINGS["lat_min"] < lat < SETTINGS["lat_max"]
+            and SETTINGS["lon_min"] < lon < SETTINGS["lon_max"]
         )
-    elif SETTINGS["selection_method"] == "radius":
+
+    if SETTINGS["selection_method"] == "radius":
         dist = get_distance(lat, lon)
         print(f"Distance: {dist}km")
         return get_distance(lat, lon) < SETTINGS["radius"]
+
+    print("Invalid selection method in settings.json. Defaulting to radius.")
+    dist = get_distance(lat, lon)
+    print(f"Distance: {dist}km")
+    return get_distance(lat, lon) < SETTINGS["radius"]
 
 
 def is_overhead(aircraft):
@@ -120,10 +124,8 @@ def get_overhead_aircraft():
     if aircraft_list:
         if len(aircraft_list) > 1:
             return min(aircraft_list, key=get_aircraft_distance)
-        else:
-            return aircraft_list[0]
-    else:
-        return None
+        return aircraft_list[0]
+    return None
 
 
 def get_aircraft_info(aircraft):

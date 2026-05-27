@@ -1,4 +1,11 @@
 #!/home/pi/rgbmatrix-flightoverhead/pyrgbmatrix/bin/python
+"""
+Display nearby flights on an RGB LED matrix using output from dump1090-fa.
+
+Reads settings from settings.json, monitors aircraft data from dump1090,
+filters for low-altitude aircraft near a receiver location, and shows info
+about the closest overhead flight on the matrix.
+"""
 
 import sys
 import time
@@ -46,6 +53,25 @@ with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
 
 
 def get_distance(lat2, lon2):
+    """
+    Compute the great-circle distance from the receiver to a point.
+
+    Uses the Haversine formula to calculate distance in kilometers between the
+    configured receiver location and the provided latitude/longitude.
+
+    Parameters
+    ----------
+    lat2 : float
+        Target latitude.
+    lon2 : float
+        Target longitude.
+
+    Returns
+    -------
+    float
+        Distance in kilometers.
+    """
+
     earth_radius = 6373  # Earth radius in km
     lat1 = SETTINGS["lat"]  # Receiver latitude
     lon1 = SETTINGS["lon"]  # Receiver longitude
@@ -64,6 +90,20 @@ def get_distance(lat2, lon2):
 
 
 def get_aircraft_distance(aircraft):
+    """
+    Return the distance from the receiver to an aircraft.
+
+    Parameters
+    ----------
+    aircraft : dict
+        ADS-B aircraft record containing "lat" and "lon".
+
+    Returns
+    -------
+    float
+        Distance in kilometers.
+    """
+
     lat2 = aircraft["lat"]  # Aircraft latitude
     lon2 = aircraft["lon"]  # Aircraft longitude
 
@@ -71,6 +111,24 @@ def get_aircraft_distance(aircraft):
 
 
 def in_area(lat, lon):
+    """
+    Check whether a coordinate falls within the configured selection area.
+
+    Supports rectangular or radial selection based on settings.json.
+
+    Parameters
+    ----------
+    lat : float
+        Latitude to check.
+    lon : float
+        Longitude to check.
+
+    Returns
+    -------
+    bool
+        True if the location is inside the configured area.
+    """
+
     if SETTINGS["selection_method"] == "rect":
         return (
             SETTINGS["lat_min"] < lat < SETTINGS["lat_max"]
@@ -89,6 +147,24 @@ def in_area(lat, lon):
 
 
 def is_overhead(aircraft):
+    """
+    Determine whether an aircraft is overhead and low enough to be interesting.
+
+    Filters aircraft by available flight data, barometric altitude, and selection
+    area. Only aircraft below 5000 feet that are inside the configured area
+    qualify.
+
+    Parameters
+    ----------
+    aircraft : dict
+        ADS-B aircraft record.
+
+    Returns
+    -------
+    bool
+        True if the aircraft is overhead and valid.
+    """
+
     keys = aircraft.keys()
 
     if "flight" not in keys:
@@ -107,6 +183,19 @@ def is_overhead(aircraft):
 
 
 def get_overhead_aircraft():
+    """
+    Load aircraft data and return the closest overhead aircraft.
+
+    Reads from test.json when TEST mode is enabled, otherwise from the dump1090
+    JSON feed. Aircraft are filtered by the `is_overhead` function and the
+    nearest matching aircraft is returned.
+
+    Returns
+    -------
+    dict or None
+        The closest overhead aircraft record, or None if none match filters.
+    """
+
     if TEST:
         json_path = HERE_DIR / "test.json"
     else:
@@ -129,12 +218,39 @@ def get_overhead_aircraft():
 
 
 def get_aircraft_info(aircraft):
+    """
+    Extract displayable text from an aircraft record.
+
+    Parameters
+    ----------
+    aircraft : dict or None
+        Aircraft record returned by `get_overhead_aircraft`.
+
+    Returns
+    -------
+    list[str] or None
+        Lines of text to render, or None if no aircraft is present.
+    """
+
     if aircraft is None:
         return None
     return [aircraft["flight"]]
 
 
 def display_text(text_array=None, error=False):
+    """
+    Render a message on the RGB matrix.
+
+    If nothing to display, just clear the display.
+
+    Parameters
+    ----------
+    text_array : list[str], optional
+        Text lines to render. If None, the matrix is cleared.
+    error : bool, optional
+        Use the error foreground color when True.
+    """
+
     if text_array is None:
         matrix.Clear()
     else:
@@ -151,6 +267,14 @@ def display_text(text_array=None, error=False):
 
 
 def watch_flights():
+    """
+    Continuously monitor overhead flights and update the matrix display.
+
+    Polls the aircraft JSON feed at a fixed interval and displays the flight
+    identifier for the nearest qualifying aircraft. If the feed cannot be read,
+    an error message is shown instead.
+    """
+
     try:
         while True:
             try:

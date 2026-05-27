@@ -157,12 +157,10 @@ def in_area(lat, lon):
             and SETTINGS["lon_min"] < lon < SETTINGS["lon_max"]
         )
 
-    if SETTINGS["selection_method"] == "radius":
-        dist = get_distance(lat, lon)
-        print(f"Distance: {dist}km")
-        return get_distance(lat, lon) < SETTINGS["radius"]
+    if SETTINGS["selection_method"] != "radius":
+        print("Invalid selection method in settings.json. Defaulting to radius.")
 
-    print("Invalid selection method in settings.json. Defaulting to radius.")
+    # Radius selection method
     dist = get_distance(lat, lon)
     print(f"Distance: {dist}km")
     return get_distance(lat, lon) < SETTINGS["radius"]

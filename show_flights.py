@@ -5,6 +5,10 @@ Display nearby flights on an RGB LED matrix using output from dump1090-fa.
 Reads settings from settings.json, monitors aircraft data from dump1090,
 filters for low-altitude aircraft near a receiver location, and shows info
 about the closest overhead flight on the matrix.
+
+Configuration should be provided by the settings.json file in the same directory as
+this script. Function docstrings include a Settings section describing which
+configuration settings they use.
 """
 
 import sys
@@ -66,6 +70,13 @@ def get_distance(lat2, lon2):
     lon2 : float
         Target longitude.
 
+    Settings
+    --------
+    lat : float
+        Receiver latitude used as the reference point.
+    lon : float
+        Receiver longitude used as the reference point.
+
     Returns
     -------
     float
@@ -123,6 +134,17 @@ def in_area(lat, lon):
     lon : float
         Longitude to check.
 
+    Settings
+    --------
+    selection_method : {'rect', 'radius'}
+        Choice of rectangular or radial selection.
+    lat_min, lat_max : float
+        Minimum and maximum latitude values used when selection_method is 'rect'.
+    lon_min, lon_max : float
+        Minimum and maximum longitude values used when selection_method is 'rect'.
+    radius : float
+        Radius in kilometers used when selection_method is 'radius'.
+
     Returns
     -------
     bool
@@ -158,6 +180,11 @@ def is_overhead(aircraft):
     ----------
     aircraft : dict
         ADS-B aircraft record.
+
+    Settings
+    --------
+    alt_baro : int
+        Threshold altitude, in feet, above which aircraft will be filtered out.
 
     Returns
     -------
@@ -249,6 +276,15 @@ def display_text(text_array=None, error=False):
         Text lines to render. If None, the matrix is cleared.
     error : bool, optional
         Use the error foreground color when True.
+
+    Settings
+    --------
+    fg_color : str
+        Default foreground color (used when `error` is False).
+    fg_color_error : str
+        Foreground color used when `error` is True.
+    bg_color : str
+        Background color shown on the RGB matrix display.
     """
 
     if text_array is None:

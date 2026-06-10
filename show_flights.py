@@ -11,7 +11,9 @@ this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
 
-import sys
+import logging
+from logging.handlers import RotatingFileHandler
+from pprint import pformat
 import time
 import json
 import numpy as np
@@ -22,7 +24,16 @@ from rgbmatrix import RGBMatrix, RGBMatrixOptions
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent
 
+# Set up logging to stderr and a rotating file handler
+LOG_FILENAME = "rgbmatrix-flightoverhead.log"
+logging.basicConfig(level=logging.WARNING)
+file_handler = RotatingFileHandler(
+    LOG_FILENAME, maxBytes=100 * 1024 * 1024, backupCount=5
+)
+file_handler.setLevel(logging.DEBUG)
+logging.getLogger().addHandler(file_handler)
 
+# RGBMatrix configuration
 options = RGBMatrixOptions()
 options.hardware_mapping = "adafruit-hat"
 options.gpio_slowdown = 2
@@ -48,7 +59,7 @@ try:
         for key, val in json_settings.items():
             SETTINGS[key] = val
 except OSError:
-    print("settings.json not found. Using default settings.")
+    logging.warning("settings.json not found. Using default settings.")
 
 
 with open("/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf", "rb") as ff:
@@ -158,12 +169,14 @@ def in_area(lat, lon):
         )
 
     if SETTINGS["selection_method"] != "radius":
-        print("Invalid selection method in settings.json. Defaulting to radius.")
+        logging.error(
+            "Invalid selection method in settings.json. Defaulting to radius."
+        )
 
     # Radius selection method
     dist = get_distance(lat, lon)
-    print(f"Distance: {dist}km")
-    return get_distance(lat, lon) < SETTINGS["radius"]
+    logging.debug("Distance: %f km", dist)
+    return dist < SETTINGS["radius"]
 
 
 def is_overhead(aircraft):
@@ -199,9 +212,9 @@ def is_overhead(aircraft):
         alt = aircraft["alt_baro"]
         lat = aircraft["lat"]
         lon = aircraft["lon"]
-    except KeyError as e:
-        print(f"Key not found in json. {e}", file=sys.stderr)
-        print(f"JSON Data: {aircraft}")
+    except KeyError as err:
+        logging.error("Key not found in json.\n%s", err)
+        logging.error("JSON Data: %s", pformat(aircraft))
         return False
 
     return alt < 5000 and in_area(lat, lon)
@@ -309,6 +322,8 @@ def watch_flights():
     an error message is shown instead.
     """
 
+    logging.info("Starting flight monitoring...")
+
     try:
         while True:
             try:
@@ -317,12 +332,12 @@ def watch_flights():
                 display_text(text_array=lines)
                 time.sleep(2)
             except OSError:
-                print("Data json not found!")
+                logging.error("Data json not found!")
                 lines = ["Data json", "not found"]
                 display_text(text_array=lines, error=True)
                 time.sleep(10)
     except KeyboardInterrupt:
-        print("\nCtrl-C received. Stopping...")
+        logging.info("\nCtrl-C received. Stopping...")
 
 
 if __name__ == "__main__":

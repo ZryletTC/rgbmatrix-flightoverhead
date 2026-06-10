@@ -16,6 +16,7 @@ from logging.handlers import RotatingFileHandler
 from pprint import pformat
 import time
 import json
+import requests
 import numpy as np
 from pathlib import Path
 from PIL import BdfFontFile, Image, ImageDraw
@@ -255,6 +256,45 @@ def get_overhead_aircraft():
     return None
 
 
+def get_aeroapi_flight_info(ident):
+    """
+    Fetch flight details from AeroAPI for a given flight identifier.
+
+    Parameters
+    ----------
+    ident : str
+        Flight identifier to query.
+
+    Returns
+    -------
+    dict or None
+        Parsed AeroAPI JSON response, or None if the request fails.
+
+    Settings
+    --------
+    aeroapi_key : str
+        API key for AeroAPI, read from settings.json.
+    """
+
+    api_logger = logging.getLogger("flightaware_api")
+    api_key = SETTINGS.get("aeroapi_key")
+
+    if not api_key:
+        api_logger.error("AeroAPI key is not configured in settings.json.")
+        return None
+
+    url = f"https://aeroapi.flightaware.com/aeroapi/flights/{ident}"
+    headers = {"x-apikey": api_key}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as exc:
+        api_logger.error("AeroAPI request failed:\n%s", exc)
+        return None
+
+
 def get_aircraft_info(aircraft):
     """
     Extract displayable text from an aircraft record.
@@ -272,7 +312,11 @@ def get_aircraft_info(aircraft):
 
     if aircraft is None:
         return None
-    return [aircraft["flight"]]
+
+    flight_info = get_aeroapi_flight_info(aircraft["flight"])
+    num_returned = len(flight_info["flights"])
+
+    return [aircraft["flight"], f"Found {num_returned} flights"]
 
 
 def display_text(text_array=None, error=False):

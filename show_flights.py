@@ -314,6 +314,9 @@ def get_aircraft_info(aircraft):
         return None
 
     flight_info = get_aeroapi_flight_info(aircraft["flight"])
+    if flight_info is None:
+        return None
+
     num_returned = len(flight_info["flights"])
 
     return [aircraft["flight"], f"Found {num_returned} flights"]

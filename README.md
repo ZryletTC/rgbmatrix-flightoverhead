@@ -29,7 +29,7 @@ Project for displaying information about overhead flights on an RGB LED matrix u
 
 4. Configure settings:
    - Copy `settings_template.json` to `settings.json`
-   - Edit `settings.json` with your location coordinates and preferences
+   - Edit `settings.json` with your location coordinates, AeroAPI key, and preferences
 
 5. Install and enable the systemd service:
    ```

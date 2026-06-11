@@ -1,4 +1,5 @@
 {
+    "aeroapi_key": "xxxxxxxx",
     "selection_method": "radius",
     "lat_min": 00.000000,
     "lat_max": 00.000000,

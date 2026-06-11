@@ -24,6 +24,7 @@ from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent
+CACHE_DIR = Path("/tmp")
 
 # Set up logging to stderr and a rotating file handler
 LOG_FILENAME = "rgbmatrix-flightoverhead.log"
@@ -283,13 +284,31 @@ def get_aeroapi_flight_info(ident):
         api_logger.error("AeroAPI key is not configured in settings.json.")
         return None
 
+    cache_path = CACHE_DIR / f"aeroapi-{ident}.json"
+
+    if cache_path.exists():
+        try:
+            with cache_path.open("r", encoding="utf-8") as cache_file:
+                api_logger.debug("Loaded cached AeroAPI response for %s", ident)
+                return json.load(cache_file)
+        except (OSError, json.JSONDecodeError) as exc:
+            api_logger.warning("Invalid AeroAPI cache %s: %s", cache_path, exc)
+
     url = f"https://aeroapi.flightaware.com/aeroapi/flights/{ident}"
     headers = {"x-apikey": api_key}
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+
+        try:
+            with cache_path.open("w", encoding="utf-8") as cache_file:
+                json.dump(result, cache_file)
+        except OSError as exc:
+            api_logger.warning("Could not write AeroAPI cache %s: %s", cache_path, exc)
+
+        return result
     except requests.RequestException as exc:
         api_logger.error("AeroAPI request failed:\n%s", exc)
         return None

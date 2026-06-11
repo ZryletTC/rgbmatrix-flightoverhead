@@ -19,11 +19,13 @@ Project for displaying information about overhead flights on an RGB LED matrix u
 
 2. Install Python dependencies:
    ```
-   pip install numpy pillow rgbmatrix
+   pip install -r requirements.txt
    ```
 
 3. Install the Adafruit RGB LED Matrix library:
    Follow the instructions at https://github.com/hzeller/rpi-rgb-led-matrix
+   or just run `sudo apt-get install python-dev-is-python3 python3-pil cython3`
+   and `pip install git+https://github.com/hzeller/rpi-rgb-led-matrix`
 
 4. Configure settings:
    - Copy `settings_template.json` to `settings.json`

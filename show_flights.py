@@ -214,8 +214,8 @@ def is_overhead(aircraft):
         lat = aircraft["lat"]
         lon = aircraft["lon"]
     except KeyError as err:
-        logging.error("Key not found in json.\n%s", err)
-        logging.error("JSON Data: %s", pformat(aircraft))
+        logging.debug("Key not found in json: %s", err)
+        logging.debug("JSON Data: %s", pformat(aircraft))
         return False
 
     return alt < 5000 and in_area(lat, lon)

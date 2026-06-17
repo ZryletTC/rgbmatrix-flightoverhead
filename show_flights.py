@@ -10,6 +10,7 @@ Configuration should be provided by the settings.json file in the same directory
 this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
+# TODO: Add more debug logs
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -46,6 +47,29 @@ DEFAULT_SETTINGS = {
 
 
 class FlightMonitor:
+    """
+    Monitor nearby aircraft and display flight information on an RGB LED matrix.
+
+    This class integrates aircraft data from dump1090 with flight information from
+    AeroAPI to display details about the nearest overhead flight on an RGB LED matrix
+    display. It filters aircraft by altitude and geographic location, caches API
+    responses, and continuously updates the display.
+
+    Attributes
+    ----------
+    test : bool
+        Enable test mode (use test.json instead of live dump1090 feed).
+    settings : dict
+        Configuration dictionary containing receiver location, matrix settings,
+        API keys, and display parameters.
+    matrix : rgbmatrix.RGBMatrix
+        RGB LED matrix instance used to display flight data.
+    font : PIL.ImageFont.ImageFont
+        Font used for rendering text on the matrix.
+    api_logger : logging.Logger
+        Logger specifically for AeroAPI-related messages.
+    """
+
     def __init__(self, *, settings_path=None, test=False):
         self.test = test
 
@@ -75,6 +99,19 @@ class FlightMonitor:
         self.api_logger = logging.getLogger("flightaware_api")
 
     def load_settings(self, settings_path=None):
+        """
+        Load settings from a JSON file.
+
+        Updates the instance settings dictionary with values from the provided
+        configuration file. If the file does not exist, settings will remain unchanged.
+
+        Parameters
+        ----------
+        settings_path : str or Path, optional
+            Path to settings.json file. If not provided, looks for settings.json
+            in the same directory as this script.
+        """
+
         if not settings_path:
             settings_path = HERE_DIR / "settings.json"
 
@@ -95,6 +132,20 @@ class FlightMonitor:
             )
 
     def set_font(self, font_path):
+        """
+        Load a BDF font file for text rendering on the RGB matrix.
+
+        Parameters
+        ----------
+        font_path : str or Path
+            Path to the BDF font file to load.
+
+        Notes
+        -----
+        Currently only supports BDF font files. Future enhancement should support
+        additional font formats.
+        """
+
         # TODO: Allow font extensions other than bdf
         with open(font_path, "rb") as ff:
             fontfile = BdfFontFile.BdfFontFile(ff)
@@ -294,6 +345,7 @@ class FlightMonitor:
         aeroapi_key : str
             API key for AeroAPI, read from settings.json.
         """
+        # TODO: Don't retry failed api requests so much
 
         api_key = self.settings.get("aeroapi_key")
         if not api_key:

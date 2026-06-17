@@ -78,8 +78,6 @@ class FlightMonitor:
 
     Attributes
     ----------
-    test : bool
-        Enable test mode (use test.json instead of live dump1090 feed).
     settings : dict
         Configuration dictionary containing receiver location, matrix settings,
         API keys, and display parameters.
@@ -90,8 +88,6 @@ class FlightMonitor:
     """
 
     def __init__(self, *, settings_path=None, test=False):
-        self.test = test
-
         # Initialize settings
         self.settings = DEFAULT_SETTINGS.copy()
         self.load_settings(settings_path=settings_path)
@@ -115,6 +111,13 @@ class FlightMonitor:
         # Setup font for text on rgb display
         self.set_font(self.settings["font_path"])
         logger.debug("Font loaded: %s", self.settings["font_path"])
+
+        # Choose path of data feed depending on TEST
+        if test:
+            self.feed_path = HERE_DIR / "test.json"
+        else:
+            self.feed_path = "/run/dump1090-fa/aircraft.json"
+        logger.debug("Reading aircraft data from %s", self.feed_path)
 
     def load_settings(self, settings_path=None):
         """
@@ -340,14 +343,7 @@ class FlightMonitor:
             The closest overhead aircraft record, or None if none match filters.
         """
 
-        # TODO: Move this to init
-        if self.test:
-            json_path = HERE_DIR / "test.json"
-        else:
-            json_path = "/run/dump1090-fa/aircraft.json"
-        logger.debug("Reading aircraft data from %s", json_path)
-
-        with open(json_path, "r", encoding="utf-8") as aircraft_file:
+        with open(self.feed_path, "r", encoding="utf-8") as aircraft_file:
             data = json.load(aircraft_file)
 
         logger.debug(

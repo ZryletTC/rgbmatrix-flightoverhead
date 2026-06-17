@@ -319,9 +319,9 @@ class FlightMonitor:
             return False
 
         try:
-            alt = aircraft["alt_baro"]
-            lat = aircraft["lat"]
-            lon = aircraft["lon"]
+            alt = float(aircraft["alt_baro"])
+            lat = float(aircraft["lat"])
+            lon = float(aircraft["lon"])
         except KeyError as err:
             logger.debug("Key not found in json: %s", err)
             logger.debug("JSON Data:\n%s", pformat(aircraft))
@@ -440,13 +440,14 @@ class FlightMonitor:
             logger.debug("No aircraft to display.")
             return None
 
-        flight_info = self.get_aeroapi_flight_info(aircraft["flight"])
+        ident = aircraft["flight"].strip()
+        flight_info = self.get_aeroapi_flight_info(ident)
         if flight_info is None:
-            logger.debug("No flight info returned for %s.", aircraft["flight"])
+            logger.debug("No flight info returned for %s.", ident)
             return None
 
         num_returned = len(flight_info["flights"])
-        lines = [aircraft["flight"], f"Found {num_returned} flights"]
+        lines = [ident, f"Found {num_returned} flights."]
         logger.debug("Displaying lines:\n%s", lines)
 
         return lines

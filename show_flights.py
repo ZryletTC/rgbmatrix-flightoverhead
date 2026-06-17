@@ -10,6 +10,7 @@ Configuration should be provided by the settings.json file in the same directory
 this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
+
 # TODO: Add more debug logs
 
 import logging
@@ -26,6 +27,29 @@ from rgbmatrix import RGBMatrix, RGBMatrixOptions
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent
 
+# Configure logging to stderr and rotating logfiles
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(funcName)s: %(message)s")
+
+# Warning and above will be sent to stderr
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)
+console_handler.setFormatter(formatter)
+
+# All messages will be sent to log file
+file_handler = RotatingFileHandler(
+    "/var/log/rgbmatrix-flightoverhead.log",
+    maxBytes=100 * 1024 * 1024,
+    backupCount=5,
+)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
 
 # Default settings, will be overwritten by values in settings.json
 DEFAULT_SETTINGS = {
@@ -41,7 +65,6 @@ DEFAULT_SETTINGS = {
     "rgb_rows": 32,
     "rgb_cols": 64,
     "font_path": "/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf",
-    "log_filename": "rgbmatrix-flightoverhead.log",
     "cache_dir": "/tmp",
 }
 
@@ -66,8 +89,6 @@ class FlightMonitor:
         RGB LED matrix instance used to display flight data.
     font : PIL.ImageFont.ImageFont
         Font used for rendering text on the matrix.
-    api_logger : logging.Logger
-        Logger specifically for AeroAPI-related messages.
     """
 
     def __init__(self, *, settings_path=None, test=False):
@@ -88,16 +109,6 @@ class FlightMonitor:
         # Setup font for text on rgb display
         self.set_font(self.settings["font_path"])
 
-        # Set up logging to stderr and a rotating file handler
-        logging.basicConfig(level=logging.WARNING)
-        file_handler = RotatingFileHandler(
-            self.settings["log_filename"], maxBytes=100 * 1024 * 1024, backupCount=5
-        )
-        file_handler.setLevel(logging.DEBUG)
-        logging.getLogger().addHandler(file_handler)
-
-        self.api_logger = logging.getLogger("flightaware_api")
-
     def load_settings(self, settings_path=None):
         """
         Load settings from a JSON file.
@@ -116,7 +127,7 @@ class FlightMonitor:
             settings_path = HERE_DIR / "settings.json"
 
         if not settings_path.exists():
-            logging.warning(
+            logger.warning(
                 "Settings file (%s) not found. Settings unchanged.", settings_path
             )
             return
@@ -126,7 +137,7 @@ class FlightMonitor:
                 json_settings = json.load(settings_file)
                 self.settings.update(json_settings)
         except (OSError, ValueError, TypeError):
-            logging.warning(
+            logger.exception(
                 "Settings file (%s) could not be read. Settings unchanged.",
                 settings_path,
             )
@@ -248,13 +259,13 @@ class FlightMonitor:
             )
 
         if self.settings["selection_method"] != "radius":
-            logging.error(
+            logger.error(
                 "Invalid selection method in settings.json. Defaulting to radius."
             )
 
         # Radius selection method
         dist = self.get_distance(lat, lon)
-        logging.debug("Distance: %f km", dist)
+        logger.debug("Distance: %f km", dist)
         return dist < self.settings["radius"]
 
     def is_overhead(self, aircraft):
@@ -289,8 +300,8 @@ class FlightMonitor:
             lat = aircraft["lat"]
             lon = aircraft["lon"]
         except KeyError as err:
-            logging.debug("Key not found in json: %s", err)
-            logging.debug("JSON Data: %s", pformat(aircraft))
+            logger.debug("Key not found in json: %s", err)
+            logger.debug("JSON Data: %s", pformat(aircraft))
             return False
 
         return alt < 5000 and self.in_area(lat, lon)
@@ -349,7 +360,7 @@ class FlightMonitor:
 
         api_key = self.settings.get("aeroapi_key")
         if not api_key:
-            self.api_logger.error("AeroAPI key is not configured in settings.json.")
+            logger.error("AeroAPI key is not configured in settings.json.")
             return None
 
         cache_path = Path(self.settings["cache_dir"]) / f"aeroapi-{ident}.json"
@@ -357,12 +368,10 @@ class FlightMonitor:
         if cache_path.exists():
             try:
                 with cache_path.open("r", encoding="utf-8") as cache_file:
-                    self.api_logger.debug(
-                        "Loaded cached AeroAPI response for %s", ident
-                    )
+                    logger.debug("Loaded cached AeroAPI response for %s", ident)
                     return json.load(cache_file)
             except (OSError, json.JSONDecodeError) as exc:
-                self.api_logger.warning("Invalid AeroAPI cache %s: %s", cache_path, exc)
+                logger.warning("Invalid AeroAPI cache %s: %s", cache_path, exc)
 
         url = f"https://aeroapi.flightaware.com/aeroapi/flights/{ident}"
         headers = {"x-apikey": api_key}
@@ -376,13 +385,11 @@ class FlightMonitor:
                 with cache_path.open("w", encoding="utf-8") as cache_file:
                     json.dump(result, cache_file)
             except OSError as exc:
-                self.api_logger.warning(
-                    "Could not write AeroAPI cache %s: %s", cache_path, exc
-                )
+                logger.warning("Could not write AeroAPI cache %s: %s", cache_path, exc)
 
             return result
-        except requests.RequestException as exc:
-            self.api_logger.error("AeroAPI request failed:\n%s", exc)
+        except requests.RequestException:
+            logger.exception("AeroAPI request failed!")
             return None
 
     def get_aircraft_info(self, aircraft):
@@ -461,7 +468,7 @@ class FlightMonitor:
         an error message is shown instead.
         """
 
-        logging.info("Starting flight monitoring...")
+        logger.info("Starting flight monitoring...")
 
         try:
             while True:
@@ -471,12 +478,12 @@ class FlightMonitor:
                     self.display_text(text_array=lines)
                     time.sleep(2)
                 except OSError:
-                    logging.error("Data json not found!")
+                    logger.exception("Dump1090 data json not found!")
                     lines = ["Data json", "not found"]
                     self.display_text(text_array=lines, error=True)
                     time.sleep(10)
         except KeyboardInterrupt:
-            logging.info("\nCtrl-C received. Stopping...")
+            logger.info("\nCtrl-C received. Stopping...")
 
 
 if __name__ == "__main__":

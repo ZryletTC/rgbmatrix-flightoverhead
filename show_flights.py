@@ -69,9 +69,9 @@ def is_overhead(aircraft):
         return False
 
     try:
-        alt = aircraft['alt_baro']
-        lat = aircraft['lat']
-        lon = aircraft['lon']
+        alt = float(aircraft['alt_baro'])
+        lat = float(aircraft['lat'])
+        lon = float(aircraft['lon'])
     except KeyError as e:
         print(f"Key not found in json. {e}", file=sys.stderr)
         print(f"JSON Data: {aircraft}")

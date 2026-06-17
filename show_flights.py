@@ -379,7 +379,6 @@ class FlightMonitor:
         aeroapi_key : str
             API key for AeroAPI, read from settings.json.
         """
-        # TODO: Don't retry failed api requests so much
 
         api_key = self.settings.get("aeroapi_key")
         if not api_key:
@@ -397,6 +396,12 @@ class FlightMonitor:
                 logger.warning("Invalid AeroAPI cache %s: %s", cache_path, exc)
 
         logger.debug("AeroAPI cache miss for %s, will request live data.", ident)
+
+        with open("failed.txt", "r", encoding="utf-8") as f:
+            failed_idents = f.readlines()
+        if ident in failed_idents:
+            logger.info("Skipping previously failed ident (%s).", ident)
+            return None
 
         url = f"https://aeroapi.flightaware.com/aeroapi/flights/{ident}"
         headers = {"x-apikey": api_key}
@@ -419,6 +424,8 @@ class FlightMonitor:
             return result
         except requests.RequestException:
             logger.exception("AeroAPI request failed!")
+            with open("failed.txt", "a", encoding="utf-8") as f:
+                f.write(ident)
             return None
 
     def get_aircraft_info(self, aircraft):

@@ -11,8 +11,6 @@ this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
 
-# TODO: Add more debug logs
-
 import logging
 from logging.handlers import RotatingFileHandler
 from pprint import pformat
@@ -97,6 +95,7 @@ class FlightMonitor:
         # Initialize settings
         self.settings = DEFAULT_SETTINGS.copy()
         self.load_settings(settings_path=settings_path)
+        logger.debug("Settings after load:\n%s", pformat(self.settings))
 
         # Initialize matrix
         options = RGBMatrixOptions()
@@ -105,9 +104,17 @@ class FlightMonitor:
         options.rows = int(self.settings["rgb_rows"])
         options.cols = int(self.settings["rgb_cols"])
         self.matrix = RGBMatrix(options=options)
+        logger.debug(
+            "Initialized RGBMatrix rows=%d cols=%d mapping=%s gpio_slowdown=%d",
+            options.rows,
+            options.cols,
+            options.hardware_mapping,
+            options.gpio_slowdown,
+        )
 
         # Setup font for text on rgb display
         self.set_font(self.settings["font_path"])
+        logger.debug("Font loaded: %s", self.settings["font_path"])
 
     def load_settings(self, settings_path=None):
         """
@@ -136,6 +143,11 @@ class FlightMonitor:
             with open(settings_path, "r", encoding="utf-8") as settings_file:
                 json_settings = json.load(settings_file)
                 self.settings.update(json_settings)
+                logger.debug(
+                    "Loaded settings from %s:\n%s",
+                    settings_path,
+                    pformat(json_settings),
+                )
         except (OSError, ValueError, TypeError):
             logger.exception(
                 "Settings file (%s) could not be read. Settings unchanged.",
@@ -158,9 +170,14 @@ class FlightMonitor:
         """
 
         # TODO: Allow font extensions other than bdf
-        with open(font_path, "rb") as ff:
-            fontfile = BdfFontFile.BdfFontFile(ff)
-            self.font = fontfile.to_imagefont()
+        logger.debug("Loading font from %s", font_path)
+        try:
+            with open(font_path, "rb") as ff:
+                fontfile = BdfFontFile.BdfFontFile(ff)
+                self.font = fontfile.to_imagefont()
+        except Exception:
+            logger.exception("Failed to load font %s", font_path)
+            raise
 
     def get_distance(self, lat2, lon2):
         """
@@ -192,6 +209,10 @@ class FlightMonitor:
         earth_radius = 6373  # Earth radius in km
         lat1 = self.settings["lat"]  # Receiver latitude
         lon1 = self.settings["lon"]  # Receiver longitude
+
+        logger.debug(
+            "Computing distance from (%f,%f) to (%f,%f).", lat1, lon1, lat2, lon2
+        )
 
         d_lat = np.deg2rad(lat2 - lat1)
         d_lon = np.deg2rad(lon2 - lon1)
@@ -265,7 +286,6 @@ class FlightMonitor:
 
         # Radius selection method
         dist = self.get_distance(lat, lon)
-        logger.debug("Distance: %f km", dist)
         return dist < self.settings["radius"]
 
     def is_overhead(self, aircraft):
@@ -301,7 +321,7 @@ class FlightMonitor:
             lon = aircraft["lon"]
         except KeyError as err:
             logger.debug("Key not found in json: %s", err)
-            logger.debug("JSON Data: %s", pformat(aircraft))
+            logger.debug("JSON Data:\n%s", pformat(aircraft))
             return False
 
         return alt < 5000 and self.in_area(lat, lon)
@@ -320,15 +340,22 @@ class FlightMonitor:
             The closest overhead aircraft record, or None if none match filters.
         """
 
+        # TODO: Move this to init
         if self.test:
             json_path = HERE_DIR / "test.json"
         else:
             json_path = "/run/dump1090-fa/aircraft.json"
+        logger.debug("Reading aircraft data from %s", json_path)
 
         with open(json_path, "r", encoding="utf-8") as aircraft_file:
             data = json.load(aircraft_file)
 
+        logger.debug(
+            "Loaded %d aircraft from data feed.", len(data.get("aircraft", []))
+        )
+
         aircraft_list = [a for a in data["aircraft"] if self.is_overhead(a)]
+        logger.debug("Filtered to %d overhead aircraft.", len(aircraft_list))
 
         # Return only the closest aircraft
         if aircraft_list:
@@ -360,7 +387,7 @@ class FlightMonitor:
 
         api_key = self.settings.get("aeroapi_key")
         if not api_key:
-            logger.error("AeroAPI key is not configured in settings.json.")
+            logger.error("AeroAPI key is not configured in settings.json")
             return None
 
         cache_path = Path(self.settings["cache_dir"]) / f"aeroapi-{ident}.json"
@@ -373,10 +400,13 @@ class FlightMonitor:
             except (OSError, json.JSONDecodeError) as exc:
                 logger.warning("Invalid AeroAPI cache %s: %s", cache_path, exc)
 
+        logger.debug("AeroAPI cache miss for %s, will request live data.", ident)
+
         url = f"https://aeroapi.flightaware.com/aeroapi/flights/{ident}"
         headers = {"x-apikey": api_key}
 
         try:
+            logger.debug("Requesting AeroAPI for %s: %s", ident, url)
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             result = response.json()
@@ -384,8 +414,11 @@ class FlightMonitor:
             try:
                 with cache_path.open("w", encoding="utf-8") as cache_file:
                     json.dump(result, cache_file)
-            except OSError as exc:
-                logger.warning("Could not write AeroAPI cache %s: %s", cache_path, exc)
+                    logger.debug(
+                        "AeroAPI response for %s written to file %s", ident, cache_path
+                    )
+            except OSError:
+                logger.exception("Could not write AeroAPI cache %s", cache_path)
 
             return result
         except requests.RequestException:
@@ -408,14 +441,19 @@ class FlightMonitor:
         """
 
         if aircraft is None:
+            logger.debug("No aircraft to display.")
             return None
 
         flight_info = self.get_aeroapi_flight_info(aircraft["flight"])
         if flight_info is None:
+            logger.debug("No flight info returned for %s.", aircraft["flight"])
             return None
 
         num_returned = len(flight_info["flights"])
-        return [aircraft["flight"], f"Found {num_returned} flights"]
+        lines = [aircraft["flight"], f"Found {num_returned} flights"]
+        logger.debug("Displaying lines:\n%s", lines)
+
+        return lines
 
     def display_text(self, text_array=None, error=False):
         """
@@ -441,6 +479,7 @@ class FlightMonitor:
         """
 
         if text_array is None:
+            logger.debug("Clearing display.")
             self.matrix.Clear()
             return
 
@@ -448,6 +487,8 @@ class FlightMonitor:
             fg_color = self.settings["fg_color_error"]
         else:
             fg_color = self.settings["fg_color"]
+
+        logger.debug("Rendering text on matrix (error=%s):\n%s", error, text_array)
 
         img = Image.new("RGB", (64, 32), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
@@ -474,6 +515,10 @@ class FlightMonitor:
             while True:
                 try:
                     aircraft = self.get_overhead_aircraft()
+                    if aircraft:
+                        logger.debug(
+                            "Selected aircraft: %s", pformat(aircraft["flight"])
+                        )
                     lines = self.get_aircraft_info(aircraft)
                     self.display_text(text_array=lines)
                     time.sleep(2)

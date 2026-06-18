@@ -452,14 +452,20 @@ class FlightMonitor:
             Font file to use when displaying text.
         """
 
-        # TODO: Unhardcode image size
-        img = Image.new("RGB", (64, 32), self.settings["bg_color"])
+        width = self.settings["rgb_cols"]
+        height = self.settings["rgb_rows"]
+
+        img = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
 
         ident = flight_info.get("ident_iata", flight_info["ident"])
 
         draw.text(
-            (32, 0), ident, fill=self.settings["fg_color"], font=self.font, anchor="ma"
+            (width / 2, 0),
+            ident,
+            fill=self.settings["fg_color"],
+            font=self.font,
+            anchor="ma",
         )
 
         self.matrix.SetImage(img)
@@ -485,13 +491,20 @@ class FlightMonitor:
             Font file to use when displaying text.
         """
 
-        img = Image.new("RGB", (64, 32), self.settings["bg_color"])
+        width = self.settings["rgb_cols"]
+        height = self.settings["rgb_rows"]
+
+        img = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
 
         ident = flight_info["ident"]
 
         draw.text(
-            (32, 0), ident, fill=self.settings["fg_color"], font=self.font, anchor="ma"
+            (width / 2, 0),
+            ident,
+            fill=self.settings["fg_color"],
+            font=self.font,
+            anchor="ma",
         )
 
         self.matrix.SetImage(img)
@@ -580,13 +593,16 @@ class FlightMonitor:
 
         logger.debug("Rendering text on matrix (error=%s):\n%s", error, text_array)
 
-        img = Image.new("RGB", (64, 32), self.settings["bg_color"])
+        width = self.settings["rgb_cols"]
+        height = self.settings["rgb_rows"]
+
+        img = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
         ypos = 0
 
         for line in text_array:
             draw.text((0, ypos), line, fill=fg_color, font=self.font)
-            ypos += 9
+            ypos += 8
 
         self.matrix.SetImage(img)
 

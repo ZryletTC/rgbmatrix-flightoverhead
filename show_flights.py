@@ -428,6 +428,74 @@ class FlightMonitor:
                 f.write(ident)
             return None
 
+    def show_airline_flight(self, flight_info):
+        """
+        Display information on the RGB display for the given commerical flight.
+
+        Future work:
+        - Add airline logo
+
+        Parameters
+        ----------
+        text_array : list[str], optional
+            Text lines to render. If None, the matrix is cleared.
+        error : bool, optional
+            Use the error foreground color when True.
+
+        Settings
+        --------
+        fg_color : str
+            Default foreground color (used when `error` is False).
+        bg_color : str
+            Background color shown on the RGB matrix display.
+        font_path : str
+            Font file to use when displaying text.
+        """
+
+        # TODO: Unhardcode image size
+        img = Image.new("RGB", (64, 32), self.settings["bg_color"])
+        draw = ImageDraw.Draw(img)
+
+        ident = flight_info.get("ident_iata", flight_info["ident"])
+
+        draw.text(
+            (32, 0), ident, fill=self.settings["fg_color"], font=self.font, anchor="ma"
+        )
+
+        self.matrix.SetImage(img)
+
+    def show_general_flight(self, flight_info):
+        """
+        Display information on the RGB display for the given generic flight.
+
+        Parameters
+        ----------
+        text_array : list[str], optional
+            Text lines to render. If None, the matrix is cleared.
+        error : bool, optional
+            Use the error foreground color when True.
+
+        Settings
+        --------
+        fg_color : str
+            Default foreground color (used when `error` is False).
+        bg_color : str
+            Background color shown on the RGB matrix display.
+        font_path : str
+            Font file to use when displaying text.
+        """
+
+        img = Image.new("RGB", (64, 32), self.settings["bg_color"])
+        draw = ImageDraw.Draw(img)
+
+        ident = flight_info["ident"]
+
+        draw.text(
+            (32, 0), ident, fill=self.settings["fg_color"], font=self.font, anchor="ma"
+        )
+
+        self.matrix.SetImage(img)
+
     def get_aircraft_info(self, aircraft):
         """
         Extract displayable text from an aircraft record.
@@ -475,9 +543,7 @@ class FlightMonitor:
             logger.warning("Current info sets:\n%s", current_flight_list)
         flight_info = current_flight_list[0]
 
-        lines = [flight_info["ident"]]
-
-        return lines
+        return flight_info
 
     def display_text(self, text_array=None, error=False):
         """
@@ -543,8 +609,18 @@ class FlightMonitor:
                         logger.debug(
                             "Selected aircraft: %s", pformat(aircraft["flight"])
                         )
-                    lines = self.get_aircraft_info(aircraft)
-                    self.display_text(text_array=lines)
+                    flight_info = self.get_aircraft_info(aircraft)
+
+                    if flight_info is None:
+                        logger.debug("No flight info to show. Clearing display.")
+                        self.matrix.Clear()
+
+                    # Format airline and general aviation flights differently
+                    if flight_info["type"] == "Airline":
+                        self.show_airline_flight(flight_info)
+                    else:
+                        self.show_general_flight(flight_info)
+
                     time.sleep(2)
                 except OSError:
                     logger.exception("Dump1090 data json not found!")

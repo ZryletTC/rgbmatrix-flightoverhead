@@ -590,6 +590,29 @@ class FlightMonitor:
 
         self.matrix.SetImage(img)
 
+    def show_flight(self):
+        """
+        Check for overhead flights and update the matrix display.
+
+        Polls the aircraft JSON feed at a fixed interval and displays info for the
+        nearest qualifying aircraft.
+        """
+
+        aircraft = self.get_overhead_aircraft()
+        if aircraft:
+            logger.debug("Selected aircraft: %s", pformat(aircraft["flight"]))
+        flight_info = self.get_aircraft_info(aircraft)
+
+        if flight_info is None:
+            logger.debug("No flight info to show. Clearing display.")
+            self.matrix.Clear()
+
+        # Format airline and general aviation flights differently
+        if flight_info["type"] == "Airline":
+            self.show_airline_flight(flight_info)
+        else:
+            self.show_general_flight(flight_info)
+
     def watch_flights(self):
         """
         Continuously monitor overhead flights and update the matrix display.
@@ -604,23 +627,7 @@ class FlightMonitor:
         try:
             while True:
                 try:
-                    aircraft = self.get_overhead_aircraft()
-                    if aircraft:
-                        logger.debug(
-                            "Selected aircraft: %s", pformat(aircraft["flight"])
-                        )
-                    flight_info = self.get_aircraft_info(aircraft)
-
-                    if flight_info is None:
-                        logger.debug("No flight info to show. Clearing display.")
-                        self.matrix.Clear()
-
-                    # Format airline and general aviation flights differently
-                    if flight_info["type"] == "Airline":
-                        self.show_airline_flight(flight_info)
-                    else:
-                        self.show_general_flight(flight_info)
-
+                    self.show_flight()
                     time.sleep(2)
                 except OSError:
                     logger.exception("Dump1090 data json not found!")
@@ -629,6 +636,7 @@ class FlightMonitor:
                     time.sleep(10)
         except KeyboardInterrupt:
             logger.info("\nCtrl-C received. Stopping...")
+            self.matrix.Clear()
 
 
 if __name__ == "__main__":

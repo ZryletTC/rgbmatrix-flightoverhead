@@ -458,8 +458,8 @@ class FlightMonitor:
         img = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
 
+        # Display flight number
         ident = flight_info.get("ident_iata", flight_info["ident"])
-
         draw.text(
             (width / 2, 0),
             ident,
@@ -467,6 +467,18 @@ class FlightMonitor:
             font=self.font,
             anchor="ma",
         )
+
+        # Display airline logo (if icao code in flight_info)
+        if "operator_icao" in flight_info:
+            operator = flight_info["operator_icao"]
+            for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
+                logo_path = HERE_DIR / "airline-logos" / logo_dir / f"{operator}.png"
+                if logo_path.exists():
+                    with Image.open(logo_path) as logo_png:
+                        logo = logo_png.convert("RGBA")
+                        # TODO: This size should become dynamic to adjust with font size
+                        logo.thumbnail((8, 8))
+                        img.paste(logo, mask=logo.split()[3])
 
         self.matrix.SetImage(img)
 

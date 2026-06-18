@@ -448,14 +448,34 @@ class FlightMonitor:
             return None
 
         ident = aircraft["flight"].strip()
-        flight_info = self.get_aeroapi_flight_info(ident)
-        if flight_info is None:
-            logger.debug("No flight info returned for %s.", ident)
+        aeroapi_json = self.get_aeroapi_flight_info(ident)
+        if aeroapi_json is None:
+            logger.debug("No flight info returned from AeroAPI for ident (%s).", ident)
             return None
 
-        num_returned = len(flight_info["flights"])
-        lines = [ident, f"Found {num_returned} flights."]
-        logger.debug("Displaying lines:\n%s", lines)
+        possible_flights = aeroapi_json["flights"]
+
+        if len(possible_flights) == 0:
+            logger.debug("No flight info returned for ident (%s).", ident)
+            return None
+
+        def status_is_current(status):
+            return "En Route" in status
+
+        current_flight_list = [
+            flight for flight in possible_flights if status_is_current(flight["status"])
+        ]
+
+        if len(current_flight_list) == 0:
+            logger.warning("None of returned flight info sets appear to be current!")
+            logger.warning("All info sets:\n%s", possible_flights)
+            return None
+        if len(current_flight_list) != 1:
+            logger.warning("Multiple flight info sets appear current. Using first.")
+            logger.warning("Current info sets:\n%s", current_flight_list)
+        flight_info = current_flight_list[0]
+
+        lines = [flight_info["ident"]]
 
         return lines
 

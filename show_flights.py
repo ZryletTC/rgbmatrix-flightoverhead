@@ -565,7 +565,7 @@ class FlightMonitor:
             return None
 
         def status_is_current(status):
-            return "En Route" in status
+            return "En Route" in status or "Taxiing" in status
 
         current_flight_list = [
             flight for flight in possible_flights if status_is_current(flight["status"])

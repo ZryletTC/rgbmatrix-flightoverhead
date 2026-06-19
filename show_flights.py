@@ -11,16 +11,20 @@ this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
 
-import logging
-from logging.handlers import RotatingFileHandler
-from pprint import pformat
-import time
 import json
-import requests
-import numpy as np
+import logging
+import time
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from pprint import pformat
+
+import numpy as np
+import requests
 from PIL import BdfFontFile, Image, ImageDraw
-from rgbmatrix import RGBMatrix, RGBMatrixOptions
+from rgbmatrix import (  # pyright: ignore[reportMissingImports]
+    RGBMatrix,
+    RGBMatrixOptions,
+)
 
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent
@@ -319,7 +323,7 @@ class FlightMonitor:
             return False
 
         try:
-            if aircraft['alt_baro'] == 'ground':
+            if aircraft["alt_baro"] == "ground":
                 return False
             alt = float(aircraft["alt_baro"])
             lat = float(aircraft["lat"])

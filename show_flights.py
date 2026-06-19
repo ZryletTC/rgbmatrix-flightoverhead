@@ -399,7 +399,7 @@ class FlightMonitor:
 
         logger.debug("AeroAPI cache miss for %s, will request live data.", ident)
 
-        with open("failed.txt", "r", encoding="utf-8") as f:
+        with open(HERE_DIR / "failed.txt", "r", encoding="utf-8") as f:
             failed_idents = f.readlines()
         if ident in failed_idents:
             logger.info("Skipping previously failed ident (%s).", ident)
@@ -426,7 +426,7 @@ class FlightMonitor:
             return result
         except requests.RequestException:
             logger.exception("AeroAPI request failed!")
-            with open("failed.txt", "a", encoding="utf-8") as f:
+            with open(HERE_DIR / "failed.txt", "a", encoding="utf-8") as f:
                 f.write(ident)
             return None
 
@@ -636,6 +636,7 @@ class FlightMonitor:
         if flight_info is None:
             logger.debug("No flight info to show. Clearing display.")
             self.matrix.Clear()
+            return
 
         # Format airline and general aviation flights differently
         if flight_info["type"] == "Airline":
@@ -659,7 +660,7 @@ class FlightMonitor:
                 try:
                     self.show_flight()
                     time.sleep(2)
-                except OSError:
+                except OSError:  # TODO: Fix this from tripping on other oserrors
                     logger.exception("Dump1090 data json not found!")
                     lines = ["Data json", "not found"]
                     self.display_text(text_array=lines, error=True)

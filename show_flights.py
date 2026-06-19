@@ -319,6 +319,8 @@ class FlightMonitor:
             return False
 
         try:
+            if aircraft['alt_baro'] == 'ground':
+                return False
             alt = float(aircraft["alt_baro"])
             lat = float(aircraft["lat"])
             lon = float(aircraft["lon"])

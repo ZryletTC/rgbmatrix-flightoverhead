@@ -121,7 +121,7 @@ class FlightMonitor:
             self.feed_path = HERE_DIR / "test.json"
         else:
             self.feed_path = "/run/dump1090-fa/aircraft.json"
-        logger.debug("Reading aircraft data from %s", self.feed_path)
+        logger.debug("Reading aircraft data from (%s)", self.feed_path)
 
     def load_settings(self, settings_path=None):
         """
@@ -151,7 +151,7 @@ class FlightMonitor:
                 json_settings = json.load(settings_file)
                 self.settings.update(json_settings)
                 logger.debug(
-                    "Loaded settings from %s:\n%s",
+                    "Loaded settings from (%s):\n%s",
                     settings_path,
                     pformat(json_settings),
                 )
@@ -177,13 +177,13 @@ class FlightMonitor:
         """
 
         # TODO: Allow font extensions other than bdf
-        logger.debug("Loading font from %s", font_path)
+        logger.debug("Loading font: %s", font_path)
         try:
             with open(font_path, "rb") as ff:
                 fontfile = BdfFontFile.BdfFontFile(ff)
                 self.font = fontfile.to_imagefont()
         except Exception:
-            logger.exception("Failed to load font %s", font_path)
+            logger.exception("Failed to load font: %s", font_path)
             raise
 
     def get_distance(self, lat2, lon2):
@@ -396,12 +396,16 @@ class FlightMonitor:
         if cache_path.exists():
             try:
                 with cache_path.open("r", encoding="utf-8") as cache_file:
-                    logger.debug("Loaded cached AeroAPI response for %s", ident)
+                    logger.debug(
+                        "Loaded cached AeroAPI response for ident (%s).", ident
+                    )
                     return json.load(cache_file)
             except (OSError, json.JSONDecodeError) as exc:
-                logger.warning("Invalid AeroAPI cache %s: %s", cache_path, exc)
+                logger.warning("Invalid AeroAPI cache (%s): %s", cache_path, exc)
 
-        logger.debug("AeroAPI cache miss for %s, will request live data.", ident)
+        logger.debug(
+            "AeroAPI cache miss for ident (%s), will request live data.", ident
+        )
 
         with open(HERE_DIR / "failed.txt", "r", encoding="utf-8") as f:
             failed_idents = f.readlines()
@@ -413,7 +417,7 @@ class FlightMonitor:
         headers = {"x-apikey": api_key}
 
         try:
-            logger.debug("Requesting AeroAPI for %s: %s", ident, url)
+            logger.debug("Requesting AeroAPI for ident (%s): %s", ident, url)
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             result = response.json()
@@ -422,10 +426,12 @@ class FlightMonitor:
                 with cache_path.open("w", encoding="utf-8") as cache_file:
                     json.dump(result, cache_file)
                     logger.debug(
-                        "AeroAPI response for %s written to file %s", ident, cache_path
+                        "AeroAPI response for ident (%s) written to file: %s",
+                        ident,
+                        cache_path,
                     )
             except OSError:
-                logger.exception("Could not write AeroAPI cache %s", cache_path)
+                logger.exception("Could not write AeroAPI cache: %s", cache_path)
 
             return result
         except requests.RequestException:
@@ -565,13 +571,27 @@ class FlightMonitor:
             flight for flight in possible_flights if status_is_current(flight["status"])
         ]
 
+        def format_for_log(info_sets: list[dict]):
+            desired_keys = ["status", "actual_in", "actual_out"]
+            airport_keys = ["origin", "destination"]
+            filtered_sets = [
+                {
+                    **{key: d[key] for key in desired_keys},
+                    **{airport: d[airport]["code"] for airport in airport_keys},
+                }
+                for d in info_sets
+            ]
+            return pformat(filtered_sets, compact=True)
+
         if len(current_flight_list) == 0:
             logger.warning("None of returned flight info sets appear to be current!")
-            logger.warning("All info sets:\n%s", possible_flights)
+            logger.warning("All info sets:\n%s", format_for_log(possible_flights))
             return None
         if len(current_flight_list) != 1:
             logger.warning("Multiple flight info sets appear current. Using first.")
-            logger.warning("Current info sets:\n%s", current_flight_list)
+            logger.warning(
+                "Current info sets:\n%s", format_for_log(current_flight_list)
+            )
         flight_info = current_flight_list[0]
 
         return flight_info

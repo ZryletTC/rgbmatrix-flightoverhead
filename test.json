@@ -1,0 +1,8 @@
+{ "now" : 1777350439.9,
+  "messages" : 115243,
+  "aircraft" : [
+    {"_note":"landing","hex":"a314d9","flight":"SKW3803 ","alt_baro":125,"alt_geom":125,"gs":137.1,"track":87.5,"baro_rate":-768,"squawk":"6022","emergency":"none","category":"A3","nav_qnh":1016.0,"nav_altitude_mcp":4000,"nav_modes":["approach"],"lat":34.427242,"lon":-119.866905,"nic":8,"rc":186,"seen_pos":53.6,"version":2,"nic_baro":1,"nac_p":10,"nac_v":2,"sil":3,"sil_type":"perhour","gva":2,"sda":2,"mlat":[],"tisb":[],"messages":196,"seen":53.5,"rssi":-21.8},
+    {"_note":"takeoff","hex":"ab8553","flight":"UAL2097 ","alt_baro":2325,"alt_geom":2325,"gs":187.1,"track":271.5,"baro_rate":1856,"squawk":"7230","emergency":"none","category":"A3","nav_qnh":1018.4,"nav_altitude_mcp":8000,"lat":34.426357,"lon":-119.900894,"nic":8,"rc":186,"seen_pos":0.0,"version":2,"nic_baro":1,"nac_p":9,"nac_v":1,"sil":3,"sil_type":"perhour","gva":2,"sda":2,"mlat":[],"tisb":[],"messages":184,"seen":0.0,"rssi":-4.9},
+    {"_note":"notoverhead","hex":"a3a736","flight":"N3341R  ","alt_baro":5300,"alt_geom":5350,"gs":116.7,"track":104.4,"geom_rate":-64,"squawk":"4624","emergency":"none","category":"A1","lat":34.491074,"lon":-119.980568,"nic":8,"rc":186,"seen_pos":18.8,"version":2,"nic_baro":0,"nac_p":10,"nac_v":2,"sil":3,"sil_type":"perhour","gva":2,"sda":2,"mlat":[],"tisb":[],"messages":22,"seen":18.8,"rssi":-21.7}
+  ]
+}

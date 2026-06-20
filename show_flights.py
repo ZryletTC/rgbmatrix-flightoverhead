@@ -521,6 +521,40 @@ class FlightMonitor:
             if logo is None:
                 logger.warning("No logo found for airline (%s).", operator)
 
+        # Display origin and destination on 2nd line
+        origin_dict = flight_info["origin"]
+        origin = origin_dict.get("code_iata", origin_dict["code"])
+        origin_width = draw.textlength(origin, font=self.font)
+        draw.text(
+            ((width - 8) // 4 - origin_width // 2, 8),
+            origin,
+            fill=self.settings["fg_color"],
+            font=self.font,
+        )
+        dest_dict = flight_info["destination"]
+        dest = dest_dict.get("code_iata", dest_dict["code"])
+        dest_width = draw.textlength(dest, font=self.font)
+        draw.text(
+            ((width - (width - 8) // 4 - dest_width // 2), 8),
+            dest,
+            fill=self.settings["fg_color"],
+            font=self.font,
+        )
+
+        # Display landing/takeoff icon in center of 2nd line
+        # Icons are saved as 8x8 PNGs in mode "1"
+        direction = "takeoff" if origin == "SBA" or dest != "SBA" else "landing"
+        direction_path = HERE_DIR / "assets" / f"{direction}.png"
+        direction_icon = Image.open(direction_path)
+        img.paste(
+            direction_icon,
+            box=(
+                (width - 8) // 2,
+                8,
+            ),
+            mask=direction_icon,
+        )
+
         self.matrix.SetImage(img)
 
     def show_general_flight(self, flight_info):
@@ -559,7 +593,40 @@ class FlightMonitor:
             ident,
             fill=self.settings["fg_color"],
             font=self.font,
-            anchor="lt",
+        )
+
+        # Display origin and destination on 2nd line
+        origin_dict = flight_info["origin"]
+        origin = origin_dict.get("code_iata", origin_dict["code"])
+        origin_width = draw.textlength(origin, font=self.font)
+        draw.text(
+            ((width - 8) // 4 - origin_width // 2, 8),
+            origin,
+            fill=self.settings["fg_color"],
+            font=self.font,
+        )
+        dest_dict = flight_info["destination"]
+        dest = dest_dict.get("code_iata", dest_dict["code"])
+        dest_width = draw.textlength(dest, font=self.font)
+        draw.text(
+            ((width - (width - 8) // 4 - dest_width // 2), 8),
+            dest,
+            fill=self.settings["fg_color"],
+            font=self.font,
+        )
+
+        # Display landing/takeoff icon in center of 2nd line
+        # Icons are saved as 8x8 PNGs in mode "1"
+        direction = "takeoff" if origin == "SBA" or dest != "SBA" else "landing"
+        direction_path = HERE_DIR / "assets" / f"{direction}.png"
+        direction_icon = Image.open(direction_path)
+        img.paste(
+            direction_icon,
+            box=(
+                (width - 8) // 2,
+                8,
+            ),
+            mask=direction_icon,
         )
 
         self.matrix.SetImage(img)

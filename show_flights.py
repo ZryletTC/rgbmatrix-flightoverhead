@@ -11,6 +11,7 @@ this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
 
+import sys
 import json
 import logging
 import time
@@ -29,6 +30,7 @@ try:
     )
 except ModuleNotFoundError:
     from fake_rgbmatrix import RGBMatrix, RGBMatrixOptions
+    import matplotlib.pyplot as plt
 
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent
@@ -41,19 +43,23 @@ formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(funcName)s: %(messa
 
 # Warning and above will be sent to stderr
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARNING)
+if TEST:
+    console_handler.setLevel(logging.DEBUG)
+else:
+    console_handler.setLevel(logging.WARNING)
 console_handler.setFormatter(formatter)
 
 # All messages will be sent to log file
-file_handler = RotatingFileHandler(
-    "/var/log/rgbmatrix-flightoverhead.log",
-    maxBytes=100 * 1024 * 1024,
-    backupCount=5,
-)
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
+if not TEST:
+    file_handler = RotatingFileHandler(
+        "/var/log/rgbmatrix-flightoverhead.log",
+        maxBytes=100 * 1024 * 1024,
+        backupCount=5,
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
 
-logger.addHandler(file_handler)
+    logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
 
@@ -95,7 +101,7 @@ class FlightMonitor:
         Font used for rendering text on the matrix.
     """
 
-    def __init__(self, *, settings_path=None, test=False):
+    def __init__(self, *, settings_path=None):
         # Initialize settings
         self.settings = DEFAULT_SETTINGS.copy()
         self.load_settings(settings_path=settings_path)
@@ -121,7 +127,7 @@ class FlightMonitor:
         logger.debug("Font loaded: %s", self.settings["font_path"])
 
         # Choose path of data feed depending on TEST
-        if test:
+        if TEST:
             self.feed_path = HERE_DIR / "test.json"
         else:
             self.feed_path = "/run/dump1090-fa/aircraft.json"
@@ -700,7 +706,10 @@ class FlightMonitor:
             while True:
                 try:
                     self.show_flight()
-                    time.sleep(2)
+                    if "matplotlib.pyplot" in sys.modules:
+                        plt.pause(2)  # pylint: disable=used-before-assignment
+                    else:
+                        time.sleep(2)
                 except OSError:  # TODO: Fix this from tripping on other oserrors
                     logger.exception("Dump1090 data json not found!")
                     lines = ["Data json", "not found"]
@@ -712,5 +721,5 @@ class FlightMonitor:
 
 
 if __name__ == "__main__":
-    monitor = FlightMonitor(test=TEST)
+    monitor = FlightMonitor()
     monitor.watch_flights()

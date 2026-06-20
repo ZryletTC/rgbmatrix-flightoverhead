@@ -491,7 +491,9 @@ class FlightMonitor:
             operator = flight_info["operator_icao"]
             logo = None
             for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
-                logo_path = HERE_DIR / "airline-logos" / logo_dir / f"{operator}.png"
+                logo_path = (
+                    HERE_DIR / "assets/airline-logos" / logo_dir / f"{operator}.png"
+                )
                 if logo_path.exists():
                     with Image.open(logo_path) as logo_png:
                         logo = logo_png.convert("RGBA")

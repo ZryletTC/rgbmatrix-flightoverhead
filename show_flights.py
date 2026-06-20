@@ -484,7 +484,7 @@ class FlightMonitor:
         draw = ImageDraw.Draw(img)
 
         # Display flight number
-        w = draw.textlength(ident, font=self.font)
+        ident_width = draw.textlength(ident, font=self.font)
         draw.text(
             (0, 0),
             ident,
@@ -507,8 +507,16 @@ class FlightMonitor:
                     with Image.open(logo_path) as logo_png:
                         logo = logo_png.convert("RGBA")
                         # TODO: This size should become dynamic to adjust with font size
-                        logo.thumbnail((8, 8))
-                        img.paste(logo, box=(w, 0, width, 8), mask=logo.split()[3])
+                        logo.thumbnail((width - ident_width, 8))
+                        logo_w, logo_h = logo.size
+                        img.paste(
+                            logo,
+                            box=(
+                                (width + ident_width - logo_w) // 2,
+                                (8 - logo_h) // 2,
+                            ),
+                            mask=logo.split()[3],
+                        )
                         break
             if logo is None:
                 logger.warning("No logo found for airline (%s).", operator)

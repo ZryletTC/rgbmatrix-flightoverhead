@@ -1,1 +1,5 @@
-{"links": null, "num_pages": 1, "flights": []}
+{
+    "flights": [],
+    "links": null,
+    "num_pages": 1
+}

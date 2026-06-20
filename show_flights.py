@@ -468,6 +468,9 @@ class FlightMonitor:
             Font file to use when displaying text.
         """
 
+        ident = flight_info.get("ident_iata", flight_info["ident"])
+        logger.debug("Diplaying commercial flight info for ident (%s).", ident)
+
         width = self.settings["rgb_cols"]
         height = self.settings["rgb_rows"]
 
@@ -475,7 +478,6 @@ class FlightMonitor:
         draw = ImageDraw.Draw(img)
 
         # Display flight number
-        ident = flight_info.get("ident_iata", flight_info["ident"])
         draw.text(
             (width / 2, 0),
             ident,
@@ -487,6 +489,7 @@ class FlightMonitor:
         # Display airline logo (if icao code in flight_info)
         if "operator_icao" in flight_info:
             operator = flight_info["operator_icao"]
+            logo = None
             for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
                 logo_path = HERE_DIR / "airline-logos" / logo_dir / f"{operator}.png"
                 if logo_path.exists():
@@ -495,6 +498,10 @@ class FlightMonitor:
                         # TODO: This size should become dynamic to adjust with font size
                         logo.thumbnail((8, 8))
                         img.paste(logo, mask=logo.split()[3])
+                        logger.debug("Showing airline logo: %s", logo_path)
+                        break
+            if logo is None:
+                logger.warning("No logo found for airline (%s).", operator)
 
         self.matrix.SetImage(img)
 
@@ -519,13 +526,14 @@ class FlightMonitor:
             Font file to use when displaying text.
         """
 
+        ident = flight_info["ident"]
+        logger.debug("Diplaying generic flight info for ident (%s).", ident)
+
         width = self.settings["rgb_cols"]
         height = self.settings["rgb_rows"]
 
         img = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
-
-        ident = flight_info["ident"]
 
         draw.text(
             (width / 2, 0),

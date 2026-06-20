@@ -480,8 +480,8 @@ class FlightMonitor:
         width = self.settings["rgb_cols"]
         height = self.settings["rgb_rows"]
 
-        img = Image.new("RGB", (width, height), self.settings["bg_color"])
-        draw = ImageDraw.Draw(img)
+        canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
+        draw = ImageDraw.Draw(canvas)
 
         # Display flight number
         ident_width = draw.textlength(ident, font=self.font)
@@ -490,10 +490,10 @@ class FlightMonitor:
             ident,
             fill=self.settings["fg_color"],
             font=self.font,
-            anchor="lt",
         )
 
         # Display airline logo (if icao code in flight_info)
+        # Icons used from Jxck-S/airline-logos
         if "operator_icao" in flight_info:
             operator = flight_info["operator_icao"]
             logo = None
@@ -509,7 +509,7 @@ class FlightMonitor:
                         # TODO: This size should become dynamic to adjust with font size
                         logo.thumbnail((width - ident_width, 8))
                         logo_w, logo_h = logo.size
-                        img.paste(
+                        canvas.paste(
                             logo,
                             box=(
                                 (width + ident_width - logo_w) // 2,
@@ -546,7 +546,7 @@ class FlightMonitor:
         direction = "takeoff" if origin == "SBA" or dest != "SBA" else "landing"
         direction_path = HERE_DIR / "assets" / f"{direction}.png"
         direction_icon = Image.open(direction_path)
-        img.paste(
+        canvas.paste(
             direction_icon,
             box=(
                 (width - 8) // 2,
@@ -555,7 +555,7 @@ class FlightMonitor:
             mask=direction_icon,
         )
 
-        self.matrix.SetImage(img)
+        self.matrix.SetImage(canvas)
 
     def show_general_flight(self, flight_info):
         """
@@ -584,8 +584,8 @@ class FlightMonitor:
         width = self.settings["rgb_cols"]
         height = self.settings["rgb_rows"]
 
-        img = Image.new("RGB", (width, height), self.settings["bg_color"])
-        draw = ImageDraw.Draw(img)
+        canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
+        draw = ImageDraw.Draw(canvas)
 
         w = draw.textlength(ident, font=self.font)
         draw.text(
@@ -620,7 +620,7 @@ class FlightMonitor:
         direction = "takeoff" if origin == "SBA" or dest != "SBA" else "landing"
         direction_path = HERE_DIR / "assets" / f"{direction}.png"
         direction_icon = Image.open(direction_path)
-        img.paste(
+        canvas.paste(
             direction_icon,
             box=(
                 (width - 8) // 2,
@@ -629,7 +629,7 @@ class FlightMonitor:
             mask=direction_icon,
         )
 
-        self.matrix.SetImage(img)
+        self.matrix.SetImage(canvas)
 
     def get_aircraft_info(self, aircraft):
         """
@@ -732,15 +732,15 @@ class FlightMonitor:
         width = self.settings["rgb_cols"]
         height = self.settings["rgb_rows"]
 
-        img = Image.new("RGB", (width, height), self.settings["bg_color"])
-        draw = ImageDraw.Draw(img)
+        canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
+        draw = ImageDraw.Draw(canvas)
         ypos = 0
 
         for line in text_array:
             draw.text((0, ypos), line, fill=fg_color, font=self.font)
             ypos += 8
 
-        self.matrix.SetImage(img)
+        self.matrix.SetImage(canvas)
 
     def show_flight(self):
         """
@@ -791,7 +791,7 @@ class FlightMonitor:
                     self.display_text(text_array=lines, error=True)
                     time.sleep(10)
         except KeyboardInterrupt:
-            logger.info("\nCtrl-C received. Stopping...")
+            logger.info("Ctrl-C received. Stopping...")
             self.matrix.Clear()
 
 

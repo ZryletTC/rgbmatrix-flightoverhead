@@ -478,12 +478,13 @@ class FlightMonitor:
         draw = ImageDraw.Draw(img)
 
         # Display flight number
+        w = draw.textlength(ident, font=self.font)
         draw.text(
-            (width / 2, 0),
+            (0, 0),
             ident,
             fill=self.settings["fg_color"],
             font=self.font,
-            anchor="ma",
+            anchor="lt",
         )
 
         # Display airline logo (if icao code in flight_info)
@@ -494,13 +495,14 @@ class FlightMonitor:
                 logo_path = (
                     HERE_DIR / "assets/airline-logos" / logo_dir / f"{operator}.png"
                 )
+                logger.debug("Checking for path (%s)...", logo_path)
                 if logo_path.exists():
+                    logger.debug("Showing airline logo: %s", logo_path)
                     with Image.open(logo_path) as logo_png:
                         logo = logo_png.convert("RGBA")
                         # TODO: This size should become dynamic to adjust with font size
                         logo.thumbnail((8, 8))
-                        img.paste(logo, mask=logo.split()[3])
-                        logger.debug("Showing airline logo: %s", logo_path)
+                        img.paste(logo, box=(w, 0, width, 8), mask=logo.split()[3])
                         break
             if logo is None:
                 logger.warning("No logo found for airline (%s).", operator)
@@ -537,12 +539,13 @@ class FlightMonitor:
         img = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(img)
 
+        w = draw.textlength(ident, font=self.font)
         draw.text(
-            (width / 2, 0),
+            ((width - w) / 2, 0),
             ident,
             fill=self.settings["fg_color"],
             font=self.font,
-            anchor="ma",
+            anchor="lt",
         )
 
         self.matrix.SetImage(img)

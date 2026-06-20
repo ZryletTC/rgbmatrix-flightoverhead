@@ -21,10 +21,14 @@ from pprint import pformat
 import numpy as np
 import requests
 from PIL import BdfFontFile, Image, ImageDraw
-from rgbmatrix import (  # pyright: ignore[reportMissingImports]
-    RGBMatrix,
-    RGBMatrixOptions,
-)
+
+try:
+    from rgbmatrix import (  # pyright: ignore[reportMissingImports]
+        RGBMatrix,
+        RGBMatrixOptions,
+    )
+except ModuleNotFoundError:
+    from fake_rgbmatrix import RGBMatrix, RGBMatrixOptions
 
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent

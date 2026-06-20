@@ -533,7 +533,9 @@ class FlightMonitor:
 
         # Display origin and destination on 2nd line
         origin_dict = flight_info["origin"]
-        origin = origin_dict.get("code_iata", origin_dict["code"])
+        origin = origin_dict.get("code_iata", None)
+        if origin is None:
+            origin = origin_dict["code"]
         origin_width = draw.textlength(origin, font=self.font)
         draw.text(
             ((width - 8) // 4 - origin_width // 2, 8),
@@ -542,7 +544,9 @@ class FlightMonitor:
             font=self.font,
         )
         dest_dict = flight_info["destination"]
-        dest = dest_dict.get("code_iata", dest_dict["code"])
+        dest = dest_dict.get("code_iata", None)
+        if dest is None:
+            dest = dest_dict["code"]
         dest_width = draw.textlength(dest, font=self.font)
         draw.text(
             ((width - (width - 8) // 4 - dest_width // 2), 8),
@@ -604,7 +608,9 @@ class FlightMonitor:
 
         # Display origin and destination on 2nd line
         origin_dict = flight_info["origin"]
-        origin = origin_dict.get("code_iata", origin_dict["code"])
+        origin = origin_dict.get("code_iata", None)
+        if origin is None:
+            origin = origin_dict["code"]
         origin_width = draw.textlength(origin, font=self.font)
         draw.text(
             ((width - 8) // 4 - origin_width // 2, 8),
@@ -613,7 +619,9 @@ class FlightMonitor:
             font=self.font,
         )
         dest_dict = flight_info["destination"]
-        dest = dest_dict.get("code_iata", dest_dict["code"])
+        dest = dest_dict.get("code_iata", None)
+        if dest is None:
+            dest = dest_dict["code"]
         dest_width = draw.textlength(dest, font=self.font)
         draw.text(
             ((width - (width - 8) // 4 - dest_width // 2), 8),

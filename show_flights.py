@@ -11,6 +11,8 @@ this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
 
+# TODO: Make lineheight a dynamic parameter
+
 import sys
 import json
 import logging
@@ -483,20 +485,12 @@ class FlightMonitor:
         canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(canvas)
 
-        # Display flight number
+        # Display first line (flight number and, if possible, airline logo)
+        # Airline logos used from Jxck-S/airline-logos
         ident_width = draw.textlength(ident, font=self.font)
-        draw.text(
-            (0, 0),
-            ident,
-            fill=self.settings["fg_color"],
-            font=self.font,
-        )
-
-        # Display airline logo (if icao code in flight_info)
-        # Icons used from Jxck-S/airline-logos
+        logo = None
         if "operator_icao" in flight_info:
             operator = flight_info["operator_icao"]
-            logo = None
             for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
                 logo_path = (
                     HERE_DIR / "assets/airline-logos" / logo_dir / f"{operator}.png"
@@ -506,20 +500,36 @@ class FlightMonitor:
                     logger.debug("Showing airline logo: %s", logo_path)
                     with Image.open(logo_path) as logo_png:
                         logo = logo_png.convert("RGBA")
-                        # TODO: This size should become dynamic to adjust with font size
                         logo.thumbnail((width - ident_width, 8))
-                        logo_w, logo_h = logo.size
+                        logo_width, logo_height = logo.size
+
+                        # Evenly space flight number with logo
+                        spacing = (width - ident_width - logo_width) // 3
+                        draw.text(
+                            (spacing, 0),
+                            ident,
+                            fill=self.settings["fg_color"],
+                            font=self.font,
+                        )
                         canvas.paste(
                             logo,
                             box=(
-                                (width + ident_width - logo_w) // 2,
-                                (8 - logo_h) // 2,
+                                width - spacing - logo_width,
+                                (8 - logo_height) // 2,
                             ),
                             mask=logo.split()[3],
                         )
                         break
-            if logo is None:
-                logger.warning("No logo found for airline (%s).", operator)
+        if logo is None:
+            logger.warning("No logo found for airline (%s).", operator)
+
+            # Center flight number if no logo
+            draw.text(
+                ((width - ident_width) / 2, 0),
+                ident,
+                fill=self.settings["fg_color"],
+                font=self.font,
+            )
 
         # Display origin and destination on 2nd line
         origin_dict = flight_info["origin"]
@@ -548,10 +558,7 @@ class FlightMonitor:
         direction_icon = Image.open(direction_path)
         canvas.paste(
             direction_icon,
-            box=(
-                (width - 8) // 2,
-                8,
-            ),
+            box=((width - 8) // 2, 8),
             mask=direction_icon,
         )
 
@@ -587,9 +594,9 @@ class FlightMonitor:
         canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
         draw = ImageDraw.Draw(canvas)
 
-        w = draw.textlength(ident, font=self.font)
+        ident_width = draw.textlength(ident, font=self.font)
         draw.text(
-            ((width - w) / 2, 0),
+            ((width - ident_width) / 2, 0),
             ident,
             fill=self.settings["fg_color"],
             font=self.font,

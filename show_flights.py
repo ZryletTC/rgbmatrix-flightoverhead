@@ -499,7 +499,8 @@ class FlightMonitor:
                 if logo_path.exists():
                     logger.debug("Showing airline logo: %s", logo_path)
                     with Image.open(logo_path) as logo_png:
-                        logo = logo_png.convert("RGBA")
+                        logo_bbox = logo_png.getbbox()
+                        logo = logo_png.crop(logo_bbox).convert("RGBA")
                         logo.thumbnail((width - ident_width, 8))
                         logo_width, logo_height = logo.size
 

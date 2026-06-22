@@ -115,7 +115,7 @@ class FlightMonitor:
 
         # Choose path of data feed depending on TEST
         if TEST:
-            self.feed_path = HERE_DIR / "test.json"
+            self.feed_path = HERE_DIR / "test_data/dump1090-fa" / "aircraft.json"
         else:
             self.feed_path = "/run/dump1090-fa/aircraft.json"
         logger.debug("Reading aircraft data from (%s)", self.feed_path)

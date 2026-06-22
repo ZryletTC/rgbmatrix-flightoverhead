@@ -57,7 +57,7 @@ console_handler.setFormatter(formatter)
 if not TEST:
     file_handler = RotatingFileHandler(
         "/var/log/rgbmatrix-flightoverhead.log",
-        maxBytes=100 * 1024 * 1024,
+        maxBytes=32 * 1024 * 1024,
         backupCount=5,
     )
     file_handler.setLevel(logging.DEBUG)

@@ -479,10 +479,10 @@ class FlightMonitor:
         ident = flight_info.get("ident_iata", flight_info["ident"])
         logger.debug("Diplaying commercial flight info for ident (%s).", ident)
 
-        width = self.settings["rgb_cols"]
-        height = self.settings["rgb_rows"]
+        canvas_width = self.settings["rgb_cols"]
+        canvas_height = self.settings["rgb_rows"]
 
-        canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
+        canvas = Image.new("RGB", (canvas_width, canvas_height), self.settings["bg_color"])
         draw = ImageDraw.Draw(canvas)
 
         # Display first line (flight number and, if possible, airline logo)
@@ -501,11 +501,11 @@ class FlightMonitor:
                     with Image.open(logo_path) as logo_png:
                         logo_bbox = logo_png.getbbox()
                         logo = logo_png.crop(logo_bbox).convert("RGBA")
-                        logo.thumbnail((width - ident_width, 8))
+                        logo.thumbnail((canvas_width - ident_width, 8))
                         logo_width, logo_height = logo.size
 
                         # Evenly space flight number with logo
-                        spacing = (width - ident_width - logo_width) // 3
+                        spacing = (canvas_width - ident_width - logo_width) // 3
                         draw.text(
                             (spacing, 0),
                             ident,
@@ -515,7 +515,7 @@ class FlightMonitor:
                         canvas.paste(
                             logo,
                             box=(
-                                width - spacing - logo_width,
+                                canvas_width - spacing - logo_width,
                                 (8 - logo_height) // 2,
                             ),
                             mask=logo.split()[3],
@@ -526,7 +526,7 @@ class FlightMonitor:
 
             # Center flight number if no logo
             draw.text(
-                ((width - ident_width) / 2, 0),
+                ((canvas_width - ident_width) / 2, 0),
                 ident,
                 fill=self.settings["fg_color"],
                 font=self.font,
@@ -539,7 +539,7 @@ class FlightMonitor:
             origin = origin_dict["code"]
         origin_width = draw.textlength(origin, font=self.font)
         draw.text(
-            ((width - 8) // 4 - origin_width // 2, 8),
+            ((canvas_width - 8) // 4 - origin_width // 2, 8),
             origin,
             fill=self.settings["fg_color"],
             font=self.font,
@@ -550,7 +550,7 @@ class FlightMonitor:
             dest = dest_dict["code"]
         dest_width = draw.textlength(dest, font=self.font)
         draw.text(
-            ((width - (width - 8) // 4 - dest_width // 2), 8),
+            ((canvas_width - (canvas_width - 8) // 4 - dest_width // 2), 8),
             dest,
             fill=self.settings["fg_color"],
             font=self.font,
@@ -563,7 +563,7 @@ class FlightMonitor:
         direction_icon = Image.open(direction_path)
         canvas.paste(
             direction_icon,
-            box=((width - 8) // 2, 8),
+            box=((canvas_width - 8) // 2, 8),
             mask=direction_icon,
         )
 
@@ -593,15 +593,15 @@ class FlightMonitor:
         ident = flight_info["ident"]
         logger.debug("Diplaying generic flight info for ident (%s).", ident)
 
-        width = self.settings["rgb_cols"]
-        height = self.settings["rgb_rows"]
+        canvas_width = self.settings["rgb_cols"]
+        canvas_height = self.settings["rgb_rows"]
 
-        canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
+        canvas = Image.new("RGB", (canvas_width, canvas_height), self.settings["bg_color"])
         draw = ImageDraw.Draw(canvas)
 
         ident_width = draw.textlength(ident, font=self.font)
         draw.text(
-            ((width - ident_width) / 2, 0),
+            ((canvas_width - ident_width) / 2, 0),
             ident,
             fill=self.settings["fg_color"],
             font=self.font,
@@ -614,7 +614,7 @@ class FlightMonitor:
             origin = origin_dict["code"]
         origin_width = draw.textlength(origin, font=self.font)
         draw.text(
-            ((width - 8) // 4 - origin_width // 2, 8),
+            ((canvas_width - 8) // 4 - origin_width // 2, 8),
             origin,
             fill=self.settings["fg_color"],
             font=self.font,
@@ -625,7 +625,7 @@ class FlightMonitor:
             dest = dest_dict["code"]
         dest_width = draw.textlength(dest, font=self.font)
         draw.text(
-            ((width - (width - 8) // 4 - dest_width // 2), 8),
+            ((canvas_width - (canvas_width - 8) // 4 - dest_width // 2), 8),
             dest,
             fill=self.settings["fg_color"],
             font=self.font,
@@ -639,7 +639,7 @@ class FlightMonitor:
         canvas.paste(
             direction_icon,
             box=(
-                (width - 8) // 2,
+                (canvas_width - 8) // 2,
                 8,
             ),
             mask=direction_icon,
@@ -745,10 +745,10 @@ class FlightMonitor:
 
         logger.debug("Rendering text on matrix (error=%s):\n%s", error, text_array)
 
-        width = self.settings["rgb_cols"]
-        height = self.settings["rgb_rows"]
+        canvas_width = self.settings["rgb_cols"]
+        canvas_height = self.settings["rgb_rows"]
 
-        canvas = Image.new("RGB", (width, height), self.settings["bg_color"])
+        canvas = Image.new("RGB", (canvas_width, canvas_height), self.settings["bg_color"])
         draw = ImageDraw.Draw(canvas)
         ypos = 0
 

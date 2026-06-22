@@ -38,7 +38,7 @@ TEST = False
 HERE_DIR = Path(__file__).resolve().parent
 
 # Configure logging to stderr and rotating logfiles
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("rgbmatrix-flightoverhead")
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(funcName)s: %(message)s")

@@ -533,19 +533,11 @@ class FlightMonitor:
                 f.write(aircraft_type)
             return None
 
-    def show_airline_flight(self, flight_info):
+    def display_flight_info(self, flight_info):
         """
-        Display information on the RGB display for the given commerical flight.
+        Display information on the RGB display for the given flight.
 
-        Future work:
-        - Add airline logo
-
-        Parameters
-        ----------
-        text_array : list[str], optional
-            Text lines to render. If None, the matrix is cleared.
-        error : bool, optional
-            Use the error foreground color when True.
+        If it is a commercial flight, will attempt to display the airline's logo.
 
         Settings
         --------
@@ -557,11 +549,13 @@ class FlightMonitor:
             Font file to use when displaying text.
         """
 
-        # TODO: Combine this an general display into one method and reorg code inside
+        # TODO: Reorganize this code into smaller chunks
         # TODO: Saved processed data instead of raw to minimize processing
 
-        ident = flight_info.get("ident_iata", flight_info["ident"])
-        logger.debug("Diplaying commercial flight info for ident (%s).", ident)
+        ident = flight_info.get("ident_iata", None)
+        if ident is None:
+            ident = flight_info["ident"]
+        logger.debug("Diplaying flight info for ident (%s).", ident)
 
         canvas_width = self.settings["rgb_cols"]
         canvas_height = self.settings["rgb_rows"]
@@ -575,7 +569,7 @@ class FlightMonitor:
         # Airline logos used from Jxck-S/airline-logos
         ident_width = draw.textlength(ident, font=self.font)
         logo = None
-        if "operator_icao" in flight_info:
+        if flight_info["type"] == "Airline" and "operator_icao" in flight_info:
             operator = flight_info["operator_icao"]
             for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
                 logo_path = (
@@ -607,8 +601,10 @@ class FlightMonitor:
                             mask=logo.split()[3],
                         )
                         break
+
         if logo is None:
-            logger.warning("No logo found for airline (%s).", operator)
+            if flight_info["type"] == "Airline":
+                logger.warning("No logo found for airline (%s).", operator)
 
             # Center flight number if no logo
             draw.text(
@@ -678,86 +674,6 @@ class FlightMonitor:
                     fill=self.settings["fg_color"],
                     font=self.font,
                 )
-
-        self.matrix.SetImage(canvas)
-
-    def show_general_flight(self, flight_info):
-        """
-        Display information on the RGB display for the given generic flight.
-
-        Parameters
-        ----------
-        text_array : list[str], optional
-            Text lines to render. If None, the matrix is cleared.
-        error : bool, optional
-            Use the error foreground color when True.
-
-        Settings
-        --------
-        fg_color : str
-            Default foreground color (used when `error` is False).
-        bg_color : str
-            Background color shown on the RGB matrix display.
-        font_path : str
-            Font file to use when displaying text.
-        """
-
-        ident = flight_info["ident"]
-        logger.debug("Diplaying generic flight info for ident (%s).", ident)
-
-        canvas_width = self.settings["rgb_cols"]
-        canvas_height = self.settings["rgb_rows"]
-
-        canvas = Image.new(
-            "RGB", (canvas_width, canvas_height), self.settings["bg_color"]
-        )
-        draw = ImageDraw.Draw(canvas)
-
-        ident_width = draw.textlength(ident, font=self.font)
-        draw.text(
-            ((canvas_width - ident_width) / 2, 0),
-            ident,
-            fill=self.settings["fg_color"],
-            font=self.font,
-        )
-
-        # Display origin and destination on 2nd line
-        origin_dict = flight_info["origin"]
-        origin = origin_dict.get("code_iata", None)
-        if origin is None:
-            origin = origin_dict["code"]
-        origin_width = draw.textlength(origin, font=self.font)
-        draw.text(
-            ((canvas_width - 8) // 4 - origin_width // 2, 8),
-            origin,
-            fill=self.settings["fg_color"],
-            font=self.font,
-        )
-        dest_dict = flight_info["destination"]
-        dest = dest_dict.get("code_iata", None)
-        if dest is None:
-            dest = dest_dict["code"]
-        dest_width = draw.textlength(dest, font=self.font)
-        draw.text(
-            ((canvas_width - (canvas_width - 8) // 4 - dest_width // 2), 8),
-            dest,
-            fill=self.settings["fg_color"],
-            font=self.font,
-        )
-
-        # Display landing/takeoff icon in center of 2nd line
-        # Icons are saved as 8x8 PNGs in mode "1"
-        direction = "takeoff" if origin == "SBA" or dest != "SBA" else "landing"
-        direction_path = HERE_DIR / "assets" / f"{direction}.png"
-        direction_icon = Image.open(direction_path)
-        canvas.paste(
-            direction_icon,
-            box=(
-                (canvas_width - 8) // 2,
-                8,
-            ),
-            mask=direction_icon,
-        )
 
         self.matrix.SetImage(canvas)
 
@@ -906,11 +822,7 @@ class FlightMonitor:
             self.matrix.Clear()
             return
 
-        # Format airline and general aviation flights differently
-        if flight_info["type"] == "Airline":
-            self.show_airline_flight(flight_info)
-        else:
-            self.show_general_flight(flight_info)
+        self.display_flight_info(flight_info)
 
     def watch_flights(self):
         """

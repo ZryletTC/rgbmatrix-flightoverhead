@@ -120,6 +120,14 @@ class FlightMonitor:
             self.feed_path = "/run/dump1090-fa/aircraft.json"
         logger.debug("Reading aircraft data from (%s)", self.feed_path)
 
+        # Ensure cache directories exist
+        self.flight_cache_path = Path(self.settings["cache_dir"]) / "aeroapi-flights"
+        self.flight_cache_path.mkdir(parents=True, exist_ok=True)
+        self.aircraft_cache_path = (
+            Path(self.settings["cache_dir"]) / "aeroapi-aircraft-types"
+        )
+        self.aircraft_cache_path.mkdir(parents=True, exist_ok=True)
+
     def load_settings(self, settings_path=None):
         """
         Load settings from a JSON file.
@@ -388,12 +396,10 @@ class FlightMonitor:
             logger.error("AeroAPI key is not configured in settings.json")
             return None
 
-        cache_path = (
-            Path(self.settings["cache_dir"]) / "aeroapi-flights" / f"{ident}.json"
-        )
+        cache_path = self.flight_cache_path / f"{ident}.json"
 
         # Only use cache files less than 20 minutes old
-        cache_threshold = time.time() - 20*60
+        cache_threshold = time.time() - 20 * 60
         if cache_path.exists() and cache_path.stat().st_mtime > cache_threshold:
             try:
                 with cache_path.open("r", encoding="utf-8") as cache_file:
@@ -467,9 +473,7 @@ class FlightMonitor:
             return None
 
         cache_path = (
-            Path(self.settings["cache_dir"])
-            / "aeroapi-aircraft-types"
-            / f"{aircraft_type}.json"
+            self.aircraft_cache_path / f"{aircraft_type}.json"
         )
 
         if cache_path.exists():

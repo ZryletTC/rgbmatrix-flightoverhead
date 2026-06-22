@@ -388,7 +388,9 @@ class FlightMonitor:
             logger.error("AeroAPI key is not configured in settings.json")
             return None
 
-        cache_path = Path(self.settings["cache_dir"]) / f"aeroapi-{ident}.json"
+        cache_path = (
+            Path(self.settings["cache_dir"]) / "aeroapi-flights" / f"{ident}.json"
+        )
 
         if cache_path.exists():
             try:
@@ -462,7 +464,11 @@ class FlightMonitor:
             logger.error("AeroAPI key is not configured in settings.json")
             return None
 
-        cache_path = Path(self.settings["cache_dir"]) / f"aeroapi-{aircraft_type}.json"
+        cache_path = (
+            Path(self.settings["cache_dir"])
+            / "aeroapi-aircraft-types"
+            / f"{aircraft_type}.json"
+        )
 
         if cache_path.exists():
             try:

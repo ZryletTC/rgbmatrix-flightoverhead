@@ -2,10 +2,14 @@
 Set of utility functions for processing data.
 """
 
-import re
 import json
 import logging
-from PIL import ImageDraw, ImageFont
+import re
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+HERE_DIR = Path(__file__).resolve().parent
 
 logger = logging.getLogger("rgbmatrix-flightoverhead")
 
@@ -37,6 +41,29 @@ def create_settings_json():
     """Create a default settings file."""
     with open("settings.json", "w", encoding="utf-8") as f:
         json.dump(DEFAULT_SETTINGS, f, indent=4)
+
+
+def get_airline_logo(airline_icao, width, height):
+    """
+    Load an airline's logo given its ICAO identifier and scale it to fit inside the
+    given width and height.
+
+    If no logo is found for the airline, return None.
+    """
+
+    for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
+        logo_path = HERE_DIR / "assets/airline-logos" / logo_dir / f"{airline_icao}.png"
+        logger.debug("Checking for path (%s)...", logo_path)
+        if logo_path.exists():
+            logger.debug("Showing airline logo: %s", logo_path)
+            with Image.open(logo_path) as logo_png:
+                logo_bbox = logo_png.getbbox()
+                logo = logo_png.crop(logo_bbox).convert("RGBA")
+                logo.thumbnail((width, height))
+                return logo
+
+    logger.warning("No logo found for airline (%s).", airline_icao)
+    return None
 
 
 def abbreviate(word, desired_length=4):

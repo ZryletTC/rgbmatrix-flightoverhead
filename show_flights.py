@@ -13,9 +13,9 @@ configuration settings they use.
 
 # TODO: Make lineheight a dynamic parameter
 
-import sys
 import json
 import logging
+import sys
 import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -25,7 +25,7 @@ import numpy as np
 import requests
 from PIL import BdfFontFile, Image, ImageDraw
 
-from utils import format_to_fit, DEFAULT_SETTINGS
+from utils import DEFAULT_SETTINGS, format_to_fit, get_airline_logo
 
 try:
     from rgbmatrix import (  # pyright: ignore[reportMissingImports]
@@ -33,8 +33,9 @@ try:
         RGBMatrixOptions,
     )
 except ModuleNotFoundError:
-    from fake_rgbmatrix import RGBMatrix, RGBMatrixOptions
     import matplotlib.pyplot as plt
+
+    from fake_rgbmatrix import RGBMatrix, RGBMatrixOptions
 
 TEST = False
 HERE_DIR = Path(__file__).resolve().parent
@@ -552,42 +553,28 @@ class FlightMonitor:
         ident_width = draw.textlength(ident, font=self.font)
         logo = None
         if flight_info["type"] == "Airline" and "operator_icao" in flight_info:
-            operator = flight_info["operator_icao"]
-            for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
-                logo_path = (
-                    HERE_DIR / "assets/airline-logos" / logo_dir / f"{operator}.png"
-                )
-                logger.debug("Checking for path (%s)...", logo_path)
-                if logo_path.exists():
-                    logger.debug("Showing airline logo: %s", logo_path)
-                    with Image.open(logo_path) as logo_png:
-                        logo_bbox = logo_png.getbbox()
-                        logo = logo_png.crop(logo_bbox).convert("RGBA")
-                        logo.thumbnail((canvas_width - ident_width, 8))
-                        logo_width, logo_height = logo.size
-
-                        # Evenly space flight number with logo
-                        spacing = (canvas_width - ident_width - logo_width) // 3
-                        draw.text(
-                            (spacing, 0),
-                            ident,
-                            fill=self.settings["fg_color"],
-                            font=self.font,
-                        )
-                        canvas.paste(
-                            logo,
-                            box=(
-                                canvas_width - spacing - logo_width,
-                                (8 - logo_height) // 2,
-                            ),
-                            mask=logo.split()[3],
-                        )
-                        break
-
-        if logo is None:
-            if flight_info["type"] == "Airline":
-                logger.warning("No logo found for airline (%s).", operator)
-
+            logo = get_airline_logo(
+                flight_info["operator_icao"], width=canvas_width - ident_width, height=8
+            )
+        if logo:
+            # Evenly space flight number with logo
+            logo_width, logo_height = logo.size
+            spacing = (canvas_width - ident_width - logo_width) // 3
+            draw.text(
+                (spacing, 0),
+                ident,
+                fill=self.settings["fg_color"],
+                font=self.font,
+            )
+            canvas.paste(
+                logo,
+                box=(
+                    canvas_width - spacing - logo_width,
+                    (8 - logo_height) // 2,
+                ),
+                mask=logo.split()[3],
+            )
+        else:
             # Center flight number if no logo
             draw.text(
                 ((canvas_width - ident_width) / 2, 0),

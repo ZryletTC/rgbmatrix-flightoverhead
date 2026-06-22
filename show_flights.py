@@ -423,7 +423,7 @@ class FlightMonitor:
 
             try:
                 with cache_path.open("w", encoding="utf-8") as cache_file:
-                    json.dump(result, cache_file)
+                    json.dump(result, cache_file, indent=4)
                     logger.debug(
                         "AeroAPI response for ident (%s) written to file: %s",
                         ident,
@@ -506,7 +506,7 @@ class FlightMonitor:
 
             try:
                 with cache_path.open("w", encoding="utf-8") as cache_file:
-                    json.dump(result, cache_file)
+                    json.dump(result, cache_file, indent=4)
                     logger.debug(
                         "AeroAPI response for aircraft_type (%s) written to file: %s",
                         aircraft_type,

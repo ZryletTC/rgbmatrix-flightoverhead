@@ -25,6 +25,8 @@ import numpy as np
 import requests
 from PIL import BdfFontFile, Image, ImageDraw
 
+from utils import format_to_fit
+
 try:
     from rgbmatrix import (  # pyright: ignore[reportMissingImports]
         RGBMatrix,
@@ -555,13 +557,18 @@ class FlightMonitor:
             Font file to use when displaying text.
         """
 
+        # TODO: Combine this an general display into one method and reorg code inside
+        # TODO: Saved processed data instead of raw to minimize processing
+
         ident = flight_info.get("ident_iata", flight_info["ident"])
         logger.debug("Diplaying commercial flight info for ident (%s).", ident)
 
         canvas_width = self.settings["rgb_cols"]
         canvas_height = self.settings["rgb_rows"]
 
-        canvas = Image.new("RGB", (canvas_width, canvas_height), self.settings["bg_color"])
+        canvas = Image.new(
+            "RGB", (canvas_width, canvas_height), self.settings["bg_color"]
+        )
         draw = ImageDraw.Draw(canvas)
 
         # Display first line (flight number and, if possible, airline logo)
@@ -646,6 +653,32 @@ class FlightMonitor:
             mask=direction_icon,
         )
 
+        # Display what kind of plane it is on the bottom two rows
+        if flight_info["aircraft"]:
+            aircraft_info = flight_info["aircraft"]
+
+            manufacturer = aircraft_info.get("manufacturer", None)
+            if manufacturer:
+                manufacturer_width = draw.textlength(manufacturer, font=self.font)
+                draw.text(
+                    ((canvas_width - manufacturer_width) // 2, 16),
+                    manufacturer,
+                    fill=self.settings["fg_color"],
+                    font=self.font,
+                )
+
+            aircraft_model = aircraft_info.get("type", None)
+            if aircraft_model:
+                formatted_model, model_width = format_to_fit(
+                    aircraft_model, width=canvas_width, draw=draw, font=self.font
+                )
+                draw.text(
+                    ((canvas_width - model_width) // 2, 24),
+                    formatted_model,
+                    fill=self.settings["fg_color"],
+                    font=self.font,
+                )
+
         self.matrix.SetImage(canvas)
 
     def show_general_flight(self, flight_info):
@@ -675,7 +708,9 @@ class FlightMonitor:
         canvas_width = self.settings["rgb_cols"]
         canvas_height = self.settings["rgb_rows"]
 
-        canvas = Image.new("RGB", (canvas_width, canvas_height), self.settings["bg_color"])
+        canvas = Image.new(
+            "RGB", (canvas_width, canvas_height), self.settings["bg_color"]
+        )
         draw = ImageDraw.Draw(canvas)
 
         ident_width = draw.textlength(ident, font=self.font)
@@ -789,7 +824,8 @@ class FlightMonitor:
 
         # Try to add details about the plane
         logger.debug(
-            "Looking for details on aircraft type (%s).", flight_info["aircraft_type"],
+            "Looking for details on aircraft type (%s).",
+            flight_info["aircraft_type"],
         )
         aircraft_details = self.get_aeroapi_aircraft_info(flight_info["aircraft_type"])
 
@@ -840,7 +876,9 @@ class FlightMonitor:
         canvas_width = self.settings["rgb_cols"]
         canvas_height = self.settings["rgb_rows"]
 
-        canvas = Image.new("RGB", (canvas_width, canvas_height), self.settings["bg_color"])
+        canvas = Image.new(
+            "RGB", (canvas_width, canvas_height), self.settings["bg_color"]
+        )
         draw = ImageDraw.Draw(canvas)
         ypos = 0
 

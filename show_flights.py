@@ -452,6 +452,85 @@ class FlightMonitor:
                 f.write(ident)
             return None
 
+    def get_aeroapi_aircraft_info(self, aircraft_type):
+        """
+        Fetch flight details from AeroAPI for a given flight identifier.
+
+        Parameters
+        ----------
+        aircraft_type : str
+            Designator for the aircraft type to query.
+
+        Returns
+        -------
+        dict or None
+            Parsed AeroAPI JSON response, or None if the request fails.
+
+        Settings
+        --------
+        aeroapi_key : str
+            API key for AeroAPI, read from settings.json.
+        """
+
+        api_key = self.settings.get("aeroapi_key")
+        if not api_key:
+            logger.error("AeroAPI key is not configured in settings.json")
+            return None
+
+        cache_path = Path(self.settings["cache_dir"]) / f"aeroapi-{aircraft_type}.json"
+
+        if cache_path.exists():
+            try:
+                with cache_path.open("r", encoding="utf-8") as cache_file:
+                    logger.debug(
+                        "Loaded cached AeroAPI response for aircraft_type (%s).",
+                        aircraft_type,
+                    )
+                    return json.load(cache_file)
+            except (OSError, json.JSONDecodeError) as exc:
+                logger.warning("Invalid AeroAPI cache (%s): %s", cache_path, exc)
+
+        logger.debug(
+            "AeroAPI cache miss for aircraft_type (%s), will request live data.",
+            aircraft_type,
+        )
+
+        # TODO: Save failed list as instance variable to minimize file reads
+        with open(HERE_DIR / "failed.txt", "r", encoding="utf-8") as f:
+            failed_aircraft_types = f.readlines()
+        if aircraft_type in failed_aircraft_types:
+            logger.info("Skipping previously failed aircraft_type (%s).", aircraft_type)
+            return None
+
+        url = f"https://aeroapi.flightaware.com/aeroapi/aircraft/types/{aircraft_type}"
+        headers = {"x-apikey": api_key}
+
+        try:
+            logger.debug(
+                "Requesting AeroAPI for aircraft_type (%s): %s", aircraft_type, url
+            )
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            result = response.json()
+
+            try:
+                with cache_path.open("w", encoding="utf-8") as cache_file:
+                    json.dump(result, cache_file)
+                    logger.debug(
+                        "AeroAPI response for aircraft_type (%s) written to file: %s",
+                        aircraft_type,
+                        cache_path,
+                    )
+            except OSError:
+                logger.exception("Could not write AeroAPI cache: %s", cache_path)
+
+            return result
+        except requests.RequestException:
+            logger.exception("AeroAPI request failed!")
+            with open(HERE_DIR / "failed.txt", "a", encoding="utf-8") as f:
+                f.write(aircraft_type)
+            return None
+
     def show_airline_flight(self, flight_info):
         """
         Display information on the RGB display for the given commerical flight.
@@ -707,6 +786,19 @@ class FlightMonitor:
                 "Current info sets:\n%s", format_for_log(current_flight_list)
             )
         flight_info = current_flight_list[0]
+
+        # Try to add details about the plane
+        logger.debug(
+            "Looking for details on aircraft type (%s).", flight_info["aircraft_type"],
+        )
+        aircraft_details = self.get_aeroapi_aircraft_info(flight_info["aircraft_type"])
+
+        if aircraft_details is None:
+            logger.exception(
+                "Could not get details for aircraft type (%s).",
+                flight_info["aircraft_type"],
+            )
+        flight_info["aircraft"] = aircraft_details
 
         return flight_info
 

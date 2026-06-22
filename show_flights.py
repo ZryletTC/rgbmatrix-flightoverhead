@@ -392,7 +392,9 @@ class FlightMonitor:
             Path(self.settings["cache_dir"]) / "aeroapi-flights" / f"{ident}.json"
         )
 
-        if cache_path.exists():
+        # Only use cache files less than 20 minutes old
+        cache_threshold = time.time() - 20*60
+        if cache_path.exists() and cache_path.stat().st_mtime > cache_threshold:
             try:
                 with cache_path.open("r", encoding="utf-8") as cache_file:
                     logger.debug(

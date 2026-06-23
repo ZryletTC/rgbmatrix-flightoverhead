@@ -596,7 +596,7 @@ class FlightMonitor:
             )
 
         # Display origin and destination on 2nd line
-        origin_dict = flight_info["origin"]
+        origin_dict = flight_info.get("origin", {})
         origin = origin_dict.get("code_iata", None)
         if origin is None:
             origin = origin_dict["code"]
@@ -607,7 +607,7 @@ class FlightMonitor:
             fill=self.settings["fg_color"],
             font=self.font,
         )
-        dest_dict = flight_info["destination"]
+        dest_dict = flight_info.get("destination", {})
         dest = dest_dict.get("code_iata", None)
         if dest is None:
             dest = dest_dict["code"]

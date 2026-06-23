@@ -597,7 +597,10 @@ class FlightMonitor:
 
         # Display origin and destination on 2nd line
         origin_dict = flight_info.get("origin", {})
-        origin = origin_dict.get("code_iata", None)
+        if origin_dict:
+            origin = origin_dict.get("code_iata", None)
+        else:
+            origin = "?"
         if origin is None:
             origin = origin_dict["code"]
         origin_width = draw.textlength(origin, font=self.font)
@@ -608,7 +611,10 @@ class FlightMonitor:
             font=self.font,
         )
         dest_dict = flight_info.get("destination", {})
-        dest = dest_dict.get("code_iata", None)
+        if dest_dict:
+            dest = dest_dict.get("code_iata", None)
+        else:
+            dest = "?"
         if dest is None:
             dest = dest_dict["code"]
         dest_width = draw.textlength(dest, font=self.font)

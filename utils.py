@@ -51,6 +51,7 @@ def get_airline_logo(airline_icao, width, height):
     If no logo is found for the airline, return None.
     """
 
+    # TODO: Make black logos visible somehow
     for logo_dir in ["flightaware_logos", "radarbox_logos", "custom_logos"]:
         logo_path = HERE_DIR / "assets/airline-logos" / logo_dir / f"{airline_icao}.png"
         logger.debug("Checking for path (%s)...", logo_path)

@@ -564,7 +564,7 @@ class FlightMonitor:
         # Airline logos used from Jxck-S/airline-logos
         ident_width = draw.textlength(ident, font=self.font)
         logo = None
-        if flight_info["type"] == "Airline" and "operator_icao" in flight_info:
+        if flight_info.get("operator_icao", False):
             logo = get_airline_logo(
                 flight_info["operator_icao"], width=canvas_width - ident_width, height=8
             )
@@ -580,10 +580,7 @@ class FlightMonitor:
             )
             canvas.paste(
                 logo,
-                box=(
-                    canvas_width - spacing - logo_width,
-                    (8 - logo_height) // 2,
-                ),
+                box=(canvas_width - spacing - logo_width, (8 - logo_height) // 2),
                 mask=logo.split()[3],
             )
         else:

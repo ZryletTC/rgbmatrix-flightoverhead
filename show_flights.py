@@ -25,7 +25,8 @@ import numpy as np
 import requests
 from PIL import BdfFontFile, Image, ImageDraw
 
-from utils import DEFAULT_SETTINGS, format_to_fit, get_airline_logo
+from settings import DEFAULT_SETTINGS
+from utils import format_to_fit, get_airline_logo
 
 try:
     from rgbmatrix import (  # pyright: ignore[reportMissingImports]

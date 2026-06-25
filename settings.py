@@ -25,4 +25,6 @@ DEFAULT_SETTINGS = {
     "rgb_cols": 64,
     "font_path": "/home/pi/adafruit-rgb-led-matrix/fonts/5x8.bdf",
     "cache_dir": "/tmp",
+    "refresh_delay": 2,
+    "no_feed_delay": 30,
 }

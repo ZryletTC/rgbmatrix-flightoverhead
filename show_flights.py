@@ -95,6 +95,10 @@ class FlightMonitor:
         self.load_settings(settings_path=settings_path)
         logger.debug("Settings after load:\n%s", pformat(self.settings))
 
+        # Instantiate a variable to hold the time to sleep between refresh
+        # This variable will change based on error state, so it is not just a setting
+        self.sleep_time = self.settings["refresh_delay"]
+
         # Initialize matrix
         options = RGBMatrixOptions()
         options.hardware_mapping = self.settings["rgb_hardware_mapping"]
@@ -355,8 +359,14 @@ class FlightMonitor:
             The closest overhead aircraft record, or None if none match filters.
         """
 
-        with open(self.feed_path, "r", encoding="utf-8") as aircraft_file:
-            data = json.load(aircraft_file)
+        try:
+            with open(self.feed_path, "r", encoding="utf-8") as aircraft_file:
+                data = json.load(aircraft_file)
+        except OSError:
+            logger.exception("Dump1090 data json not found!")
+            lines = ["Data json", "not found"]
+            self.display_text(text_array=lines, error=True)
+            self.sleep_time = self.settings["no_feed_delay"]
 
         logger.debug(
             "Loaded %d aircraft from data feed.", len(data.get("aircraft", []))
@@ -798,10 +808,11 @@ class FlightMonitor:
         """
 
         aircraft = self.get_overhead_aircraft()
-        if aircraft:
-            logger.debug("Selected aircraft: %s", pformat(aircraft["flight"]))
-        flight_info = self.get_aircraft_info(aircraft)
+        if aircraft is None:
+            return
+        logger.debug("Selected aircraft: %s", pformat(aircraft["flight"]))
 
+        flight_info = self.get_aircraft_info(aircraft)
         if flight_info is None:
             logger.debug("No flight info to show. Clearing display.")
             self.matrix.Clear()
@@ -821,18 +832,19 @@ class FlightMonitor:
         logger.info("Starting flight monitoring...")
 
         try:
+            # TODO: Catch unexpected errors -> log and display error message on screen
             while True:
-                try:
-                    self.show_flight()
-                    if "matplotlib.pyplot" in sys.modules:
-                        plt.pause(2)  # pylint: disable=used-before-assignment
-                    else:
-                        time.sleep(2)
-                except OSError:  # TODO: Fix this from tripping on other oserrors
-                    logger.exception("Dump1090 data json not found!")
-                    lines = ["Data json", "not found"]
-                    self.display_text(text_array=lines, error=True)
-                    time.sleep(10)
+                # Reset sleep time to default delay
+                self.sleep_time = self.settings["refresh_delay"]
+
+                # Run
+                self.show_flight()
+
+                # If we're displaying via plt, we need to sleep using plt.pause
+                if "matplotlib.pyplot" in sys.modules:
+                    plt.pause(self.sleep_time)  # pylint: disable=used-before-assignment
+                else:
+                    time.sleep(self.sleep_time)
         except KeyboardInterrupt:
             logger.info("Ctrl-C received. Stopping...")
             self.matrix.Clear()

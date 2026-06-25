@@ -715,12 +715,12 @@ class FlightMonitor:
             return pformat(filtered_sets, compact=True)
 
         if len(current_flight_list) == 0:
-            logger.warning("None of returned flight info sets appear to be current!")
-            logger.warning("All info sets:\n%s", format_for_log(possible_flights))
+            logger.debug("None of returned flight info sets appear to be current!")
+            logger.debug("All info sets:\n%s", format_for_log(possible_flights))
             return None
         if len(current_flight_list) != 1:
-            logger.warning("Multiple flight info sets appear current. Using first.")
-            logger.warning(
+            logger.debug("Multiple flight info sets appear current. Using first.")
+            logger.debug(
                 "Current info sets:\n%s", format_for_log(current_flight_list)
             )
         flight_info = current_flight_list[0]

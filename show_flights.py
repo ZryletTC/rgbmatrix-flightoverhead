@@ -809,6 +809,8 @@ class FlightMonitor:
 
         aircraft = self.get_overhead_aircraft()
         if aircraft is None:
+            logger.debug("No aircraft to show. Clearing display.")
+            self.matrix.Clear()
             return
         logger.debug("Selected aircraft: %s", pformat(aircraft["flight"]))
 

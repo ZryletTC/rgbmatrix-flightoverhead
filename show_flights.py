@@ -407,6 +407,10 @@ class FlightMonitor:
             logger.error("AeroAPI key is not configured in settings.json")
             return None
 
+        if not ident:
+            logger.error("No flight ident provided!")
+            return None
+
         cache_path = self.flight_cache_path / f"{ident}.json"
 
         # Only use cache files less than 20 minutes old
@@ -481,6 +485,11 @@ class FlightMonitor:
         api_key = self.settings.get("aeroapi_key")
         if not api_key:
             logger.error("AeroAPI key is not configured in settings.json")
+            return None
+
+
+        if not aircraft_type:
+            logger.error("No aircraft type provided!")
             return None
 
         cache_path = (
@@ -734,18 +743,20 @@ class FlightMonitor:
         flight_info = current_flight_list[0]
 
         # Try to add details about the plane
-        logger.debug(
-            "Looking for details on aircraft type (%s).",
-            flight_info["aircraft_type"],
-        )
-        aircraft_details = self.get_aeroapi_aircraft_info(flight_info["aircraft_type"])
-
-        if aircraft_details is None:
-            logger.exception(
-                "Could not get details for aircraft type (%s).",
-                flight_info["aircraft_type"],
+        aircraft_type = flight_info.get("aircraft_type", None)
+        if aircraft_type:
+            logger.debug(
+                "Looking for details on aircraft type (%s).",
+                aircraft_type,
             )
-        flight_info["aircraft"] = aircraft_details
+            aircraft_details = self.get_aeroapi_aircraft_info(aircraft_type)
+
+            if aircraft_details is None:
+                logger.exception(
+                    "Could not get details for aircraft type (%s).",
+                    flight_info["aircraft_type"],
+                )
+            flight_info["aircraft"] = aircraft_details
 
         return flight_info
 

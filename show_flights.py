@@ -99,6 +99,10 @@ class FlightMonitor:
         # This variable will change based on error state, so it is not just a setting
         self.sleep_time = self.settings["refresh_delay"]
 
+        # Instantiate lists to hold failed values for aeroapi calls so they aren't made repeatedly
+        self.failed_idents = []
+        self.failed_aircraft_types = []
+
         # Initialize matrix
         options = RGBMatrixOptions()
         options.hardware_mapping = self.settings["rgb_hardware_mapping"]
@@ -429,9 +433,7 @@ class FlightMonitor:
             "AeroAPI cache miss for ident (%s), will request live data.", ident
         )
 
-        with open(HERE_DIR / "failed.txt", "r", encoding="utf-8") as f:
-            failed_idents = f.readlines()
-        if ident in failed_idents:
+        if ident in self.failed_idents:
             logger.info("Skipping previously failed ident (%s).", ident)
             return None
 
@@ -458,8 +460,7 @@ class FlightMonitor:
             return result
         except requests.RequestException:
             logger.exception("AeroAPI request failed!")
-            with open(HERE_DIR / "failed.txt", "a", encoding="utf-8") as f:
-                f.write(ident)
+            self.failed_idents.append(ident)
             return None
 
     def get_aeroapi_aircraft_info(self, aircraft_type):
@@ -512,10 +513,7 @@ class FlightMonitor:
             aircraft_type,
         )
 
-        # TODO: Save failed list as instance variable to minimize file reads
-        with open(HERE_DIR / "failed.txt", "r", encoding="utf-8") as f:
-            failed_aircraft_types = f.readlines()
-        if aircraft_type in failed_aircraft_types:
+        if aircraft_type in self.failed_aircraft_types:
             logger.info("Skipping previously failed aircraft_type (%s).", aircraft_type)
             return None
 
@@ -544,8 +542,7 @@ class FlightMonitor:
             return result
         except requests.RequestException:
             logger.exception("AeroAPI request failed!")
-            with open(HERE_DIR / "failed.txt", "a", encoding="utf-8") as f:
-                f.write(aircraft_type)
+            self.failed_aircraft_types.append(aircraft_type)
             return None
 
     def display_flight_info(self, flight_info):

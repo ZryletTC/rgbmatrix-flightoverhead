@@ -1,0 +1,7 @@
+{
+    "manufacturer": "Sikorsky",
+    "type": "S-70",
+    "description": "twin-turboshaft",
+    "engine_count": 2,
+    "engine_type": "turboshaft"
+}

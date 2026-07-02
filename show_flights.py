@@ -11,7 +11,11 @@ this script. Function docstrings include a Settings section describing which
 configuration settings they use.
 """
 
+# TODO: Don't update if it's the same image as last
 # TODO: Make lineheight a dynamic parameter
+# TODO: Add clock when idle
+# TODO: Make brightness variable based on ambient light level
+# TODO: Handle helicopters and coordinate origins (if "airport_info_url" is None)
 
 import json
 import logging
@@ -99,7 +103,9 @@ class FlightMonitor:
         # This variable will change based on error state, so it is not just a setting
         self.sleep_time = self.settings["refresh_delay"]
 
-        # Instantiate lists to hold failed values for aeroapi calls so they aren't made repeatedly
+        # Instantiate lists to hold failed values for aeroapi calls
+        # so they aren't repeatedly too much
+        # TODO: Drop values after 12 hours or so (make a setting variable)
         self.failed_idents = []
         self.failed_aircraft_types = []
 
@@ -488,14 +494,11 @@ class FlightMonitor:
             logger.error("AeroAPI key is not configured in settings.json")
             return None
 
-
         if not aircraft_type:
             logger.error("No aircraft type provided!")
             return None
 
-        cache_path = (
-            self.aircraft_cache_path / f"{aircraft_type}.json"
-        )
+        cache_path = self.aircraft_cache_path / f"{aircraft_type}.json"
 
         if cache_path.exists():
             try:
@@ -609,6 +612,7 @@ class FlightMonitor:
                 font=self.font,
             )
 
+        # TODO: Make ? -> SBA if other is given
         # Display origin and destination on 2nd line
         origin_dict = flight_info.get("origin", {})
         if origin_dict:
@@ -734,9 +738,7 @@ class FlightMonitor:
             return None
         if len(current_flight_list) != 1:
             logger.debug("Multiple flight info sets appear current. Using first.")
-            logger.debug(
-                "Current info sets:\n%s", format_for_log(current_flight_list)
-            )
+            logger.debug("Current info sets:\n%s", format_for_log(current_flight_list))
         flight_info = current_flight_list[0]
 
         # Try to add details about the plane

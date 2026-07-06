@@ -67,7 +67,7 @@ def abbreviate(word, desired_length=4):
 
     abbreviation = word[0]
     consonants = [c for c in list(word[1:]) if not is_vowel(c)]
-    print(f"Consonants: {consonants}")
+    # print(f"Consonants: {consonants}")
 
     if len(consonants) >= desired_length - 1:
         if desired_length == 2:
@@ -84,12 +84,12 @@ def abbreviate(word, desired_length=4):
             vowel_groups.pop(-1)
         vowels_needed = desired_length - len(consonants) - 1
         while vowels_needed > 0:
-            print(abbreviation)
-            print(f"Vowel groups: {vowel_groups}")
+            # print(abbreviation)
+            # print(f"Vowel groups: {vowel_groups}")
             if vowel_groups[0]:
                 num_to_grab = 1 + max([vowels_needed - len(vowel_groups), 0])
-                print(f"Still need {vowels_needed} vowels.")
-                print(f"Grabbing: {num_to_grab}")
+                # print(f"Still need {vowels_needed} vowels.")
+                # print(f"Grabbing: {num_to_grab}")
                 abbreviation += vowel_groups.pop(0)[0:num_to_grab]
                 vowels_needed -= num_to_grab
             else:
@@ -111,9 +111,9 @@ def format_to_fit(text, width, *, draw: ImageDraw, font: ImageFont.ImageFont):
     width : int
         The width in pixels to fit text into.
     draw : ImageDraw
-        ImageDraw object used for determining width of text when printed.
+        ImageDraw object used for determining width of text when displayed.
     font : ImageFont.ImageFont
-        Font to print text with.
+        Font to display text with.
     """
 
     text_width = draw.textlength(text, font=font)

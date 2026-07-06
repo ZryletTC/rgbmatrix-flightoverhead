@@ -726,7 +726,7 @@ class FlightMonitor:
             filtered_sets = [
                 {
                     **{key: d[key] for key in desired_keys},
-                    **{airport: d[airport]["code"] for airport in airport_keys},
+                    **{airport: d.get(airport, {}).get("code", "?") for airport in airport_keys},
                 }
                 for d in info_sets
             ]
